@@ -59,8 +59,7 @@ dependencies {
     //类瀑布流
     implementation 'com.google.accompanist:accompanist-flowlayout:0.24.7-alpha'
     //轮播图Pager
-    implementation "com.google.accompanist:accompanist-pager:0.24.2-alpha"
-    implementation "com.google.accompanist:accompanist-pager-indicators:0.24.2-alpha"
+    implementation "com.google.accompanist:accompanist-pager:0.16.1"
 
 //    implementation("io.coil-kt:coil:2.0.0-rc03")
 //    implementation("io.coil-kt:coil-compose:2.0.0-rc03")

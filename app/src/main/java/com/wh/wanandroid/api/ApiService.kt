@@ -19,7 +19,7 @@ interface ApiService {
      * http://www.wanandroid.com/article/top/json
      */
     @GET("article/top/json")
-    fun getTopArticles(): Observable<HttpResult<MutableList<Article>>>
+    fun getTopArticles(): Observable<HttpResult<List<Article>>>
 
     /**
      * 获取文章列表

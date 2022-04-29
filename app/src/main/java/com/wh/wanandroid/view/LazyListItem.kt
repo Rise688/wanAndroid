@@ -1,58 +1,90 @@
 package com.wh.wanandroid.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Card
-import androidx.compose.material.IconButton
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.wh.wanandroid.bean.ArticleResponseBody
+import androidx.compose.ui.unit.sp
+import com.wh.wanandroid.bean.Article
+import com.wh.wanandroid.view.CardHelper.Companion.CardBlue
+import com.wh.wanandroid.view.CardHelper.Companion.CardRed
 
 class LazyListItem {
 
-    @Preview(showBackground = true)
-    @Composable
-    fun DefaultPreview() {
-        ArticleItem()
-    }
     companion object {
         @Composable
-        fun ArticleItem() {
-            Column(Modifier.background(Color.White)) {
+        fun ArticleItem(article: Article) {
+            Column(
+                Modifier.background(Color.White).fillMaxWidth().padding(8.dp, 3.dp),
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.height(24.dp)
+                        .fillMaxWidth().padding(bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ){
                     Row(
-                        modifier = Modifier.wrapContentWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
                     ){
-                        Card(){}
-                        Card(){}
-                        Text("111")
+                        if(article.top == "1") {
+                            CardRed(Modifier,"置顶")
+                        }
+                        Box(Modifier.width(4.dp))
+                        if(article.fresh){
+                            CardRed(Modifier,"新")
+                        }else if(article.tags.isNotEmpty()){
+                            CardBlue(Modifier,"本站发布")
+                        }
+                        Box(Modifier.width(4.dp))
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            color = Color.Gray,
+                            text = article.author,
+                            style = MaterialTheme.typography.body2
+                        )
                     }
-                    Text("")
+                    Text(
+                        article.niceDate,
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.body2
+                    )
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
                 ){
-                    Text("")
+                    Text(
+                        text = article.title,
+                        style = TextStyle(
+                            fontWeight = FontWeight.W400, //设置字体粗细
+                            fontSize = 16.sp,
+                            letterSpacing = 0.5.sp
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ){
-                    Text("")
-                    IconButton(onClick = {}) {
-                        
+                    Text(
+                        article.chapterName +"/"+ article.superChapterName,
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.body2
+                    )
+                    IconButton(onClick = {
+                    }, modifier = Modifier.size(36.dp)) {
+                        Icon(Icons.Filled.Favorite, null)
                     }
                 }
             }

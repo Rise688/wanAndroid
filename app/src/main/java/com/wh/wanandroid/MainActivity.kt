@@ -7,11 +7,12 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -39,17 +40,14 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.HorizontalPagerIndicator
 import com.google.accompanist.pager.rememberPagerState
-import com.wh.wanandroid.bean.ArticleResponseBody
-import com.wh.wanandroid.bean.Banner
-import com.wh.wanandroid.bean.HotSearchBean
-import com.wh.wanandroid.bean.HttpResult
+import com.wh.wanandroid.bean.*
 import com.wh.wanandroid.request.RetrofitHelper
 import com.wh.wanandroid.request.requestPic
 import com.wh.wanandroid.ui.theme.Shapes
 import com.wh.wanandroid.ui.theme.WanAndroidTheme
 import com.wh.wanandroid.view.BaseLazyList
+import com.wh.wanandroid.view.LazyListItem
 import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -60,27 +58,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class Message(var image : ImageVector, var itemText : String)
+data class Message(var image: ImageVector, var itemText: String)
+
 val messages = mutableListOf<Message>(
-    Message(Icons.Outlined.Favorite,"我的收藏"),
-    Message(Icons.Outlined.Share,"我的分享"),
-    Message(Icons.Outlined.PendingActions,"TODO清单"),
-    Message(Icons.Outlined.NightsStay,"夜间模式"),
+    Message(Icons.Outlined.Favorite, "我的收藏"),
+    Message(Icons.Outlined.Share, "我的分享"),
+    Message(Icons.Outlined.PendingActions, "TODO清单"),
+    Message(Icons.Outlined.NightsStay, "夜间模式"),
 //    Message(Icons.Outlined.Settings,"设置"),
-    Message(Icons.Outlined.PowerSettingsNew,"退出登录")
+    Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
 var bannerDate = mutableStateOf(listOf<Banner>())
+var articlesState = mutableStateOf(listOf<Article>())
+var articlePageCount = 0
+
 class MainActivity : FragmentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {  WanAndroidTheme {
-            // A surface container using the 'background' color from the theme
-            Surface(color = MaterialTheme.colors.background) {
-                MainView()
+        setContent {
+            WanAndroidTheme {
+                // A surface container using the 'background' color from the theme
+                Surface(color = MaterialTheme.colors.background) {
+                    MainView()
+                }
             }
-        } }
+        }
         RetrofitHelper.service.getBanners()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -91,29 +95,51 @@ class MainActivity : FragmentActivity() {
                     Log.d("gggg", t.toString())
                     bannerDate.value = t.data
                 }
+
                 override fun onError(t: Throwable) {
                     Log.d("gggg", t.toString())
                 }
             })
-//        RetrofitHelper.service.getArticles(1)
+        requestArtcle(articlePageCount)
+//        RetrofitHelper.service.getTopArticles()
 //            .subscribeOn(Schedulers.io())
 //            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe(object : Observer<HttpResult<ArticleResponseBody>> {
+//            .subscribe(object : Observer<HttpResult<List<Article>>> {
 //                override fun onComplete() {}
 //                override fun onSubscribe(d: Disposable) {}
-//                override fun onNext(t: HttpResult<ArticleResponseBody>) {
-//                    Log.v("ssss",t.data.toString())
+//                override fun onNext(t: HttpResult<List<Article>>) {
+//                    Log.d("gggg", t.toString())
+//                    articlesState.value = t.data
 //                }
-//                override fun onError(t: Throwable) {}
+//
+//                override fun onError(t: Throwable) {
+////                    TODO()
+//                }
 //            })
     }
+    fun requestArtcle(num : Int){
+        RetrofitHelper.service.getArticles(num)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(object : Observer<HttpResult<ArticleResponseBody>> {
+                override fun onComplete() {}
+                override fun onSubscribe(d: Disposable) {}
+                override fun onNext(t: HttpResult<ArticleResponseBody>) {
+                    Log.d("gggg", t.toString())
+                    articlesState.apply { value = value + t.data.datas }
+                }
 
+                override fun onError(t: Throwable) {
+                    TODO()
+                }
+            })
+    }
     @Composable
-    fun MainView(){
+    fun MainView() {
         val scaffoldState = rememberScaffoldState()
         val scope = rememberCoroutineScope()
         var selectedItem by remember { mutableStateOf(0) }
-        val items = listOf("首页", "广场", "公众号","体系","项目")
+        val items = listOf("首页", "广场", "公众号", "体系", "项目")
         Scaffold(
             scaffoldState = scaffoldState,
             topBar = {
@@ -136,7 +162,7 @@ class MainActivity : FragmentActivity() {
                     actions = {
                         IconButton(
                             onClick = {
-                                val intent = Intent(this@MainActivity,SearchActivity::class.java)
+                                val intent = Intent(this@MainActivity, SearchActivity::class.java)
                                 startActivity(intent)
                             }
                         ) {
@@ -153,7 +179,7 @@ class MainActivity : FragmentActivity() {
                         .clip(CircleShape)
                         .border(1.5.dp, MaterialTheme.colors.secondary, shape = CircleShape),
                     onClick = { }
-                ){
+                ) {
                     Icon(Icons.Filled.ArrowUpward, null)
                 }
             },
@@ -162,51 +188,64 @@ class MainActivity : FragmentActivity() {
                     items.forEachIndexed { index, item ->
                         BottomNavigationItem(
                             icon = {
-                                when(index){
+                                when (index) {
                                     0 -> Icon(Icons.Filled.Home, contentDescription = null)
                                     1 -> Icon(Icons.Filled.Favorite, contentDescription = null)
                                     2 -> Icon(Icons.Filled.Favorite, contentDescription = null)
                                     3 -> Icon(Icons.Filled.Favorite, contentDescription = null)
                                     else -> Icon(Icons.Filled.Settings, contentDescription = null)
                                 }
-                                   },
+                            },
                             label = { Text(item) },
                             selected = selectedItem == index,
-                            onClick = { selectedItem = index
+                            onClick = {
+                                selectedItem = index
 
                             }
                         )
                     }
                 }
-            } ,
+            },
             drawerContent = {
-                    DrawerContent(scaffoldState, scope)
+                DrawerContent(scaffoldState, scope)
             },
             drawerShape = customShape(),
-            drawerElevation = 100.dp
+            drawerElevation = 100.dp,
         ) {
-            when(selectedItem) {
-                0 -> { Home() }
-                1 -> { Square() }
-                2 -> { Wx() }
-                3 -> { SystemView() }
-                else -> { Project() }
+            Box(modifier = Modifier.padding(bottom = 56.dp)) {
+                when (selectedItem) {
+                    0 -> Home()
+                    1 -> Square()
+                    2 -> Wx()
+                    3 -> SystemView()
+                    else -> Project()
+                }
             }
         }
     }
-    fun customShape() =  object : Shape {
+
+    fun customShape() = object : Shape {
         override fun createOutline(
             size: Size,
             layoutDirection: LayoutDirection,
             density: Density
         ): Outline {
-            return Outline.Rectangle(Rect(0f,0f,size.width *5/6,size.height /* width */, /* height */))
+            return Outline.Rectangle(
+                Rect(
+                    0f,
+                    0f,
+                    size.width * 5 / 6,
+                    size.height, /* width */ /* height */
+                )
+            )
         }
     }
+
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
-    fun DrawerContent( scaffoldState: ScaffoldState,
-                       scope: CoroutineScope
+    fun DrawerContent(
+        scaffoldState: ScaffoldState,
+        scope: CoroutineScope
     ) {
 
         Box {
@@ -242,14 +281,15 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+
     @Composable
-    fun MessageRow(message : Message,clickEvent : () -> Unit){
+    fun MessageRow(message: Message, clickEvent: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = clickEvent)
                 .padding(10.dp, 20.dp),
-        ){
+        ) {
             Icon(
                 imageVector = message.image,
                 contentDescription = null
@@ -257,11 +297,14 @@ class MainActivity : FragmentActivity() {
             Text(text = message.itemText)
         }
     }
-    val clickEvent : (String) -> Unit = { tag ->
-        when( tag ){
-            "我的收藏" -> {Toast.makeText(this@MainActivity,"我的收藏",Toast.LENGTH_SHORT).show()}
+
+    val clickEvent: (String) -> Unit = { tag ->
+        when (tag) {
+            "我的收藏" -> {
+                Toast.makeText(this@MainActivity, "我的收藏", Toast.LENGTH_SHORT).show()
+            }
             "我的分享" -> {
-                val intent = Intent(this,LoginActivity::class.java)
+                val intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
             }
             "TODO清单" -> {}
@@ -272,62 +315,89 @@ class MainActivity : FragmentActivity() {
 
     @OptIn(ExperimentalPagerApi::class)
     @Composable
-    fun Home(){
-
-        val pagerState = rememberPagerState(initialPage = 0)//初始页面
+    fun Home() {
+        val pagerState = rememberPagerState(initialPage = 0, infiniteLoop = true,//总页数
+            pageCount = bannerDate.value.size,
+            //预加载的个数
+            initialOffscreenLimit = 1,)//初始页面
         val imageState = bannerDate.value.map { banner ->
             requestPic.loadImage(
                 context = LocalContext.current,
                 url = banner.imagePath,
             )
         }
-        Box(contentAlignment = Alignment.BottomEnd) {
-            HorizontalPager(
-                count = bannerDate.value.size,
-                state = pagerState,
-//                modifier = Modifier.clickable(onClick = { onClick(list[pagerState.currentPage].linkUrl) })
-            ) { page ->
-                imageState[page].value?.asImageBitmap()?.let { bitmap ->
-                    Image(
-                        bitmap = bitmap,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+        val listState = rememberLazyListState()
+        LazyColumn(state = listState){
+            item{
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    HorizontalPager(
+    //                    count = bannerDate.value.size,
+                        state = pagerState,
+                        //                modifier = Modifier.clickable(onClick = { onClick(list[pagerState.currentPage].linkUrl) })
+                    ) { page ->
+                        imageState[page].value?.asImageBitmap()?.let { bitmap ->
+                            Image(
+                                bitmap = bitmap,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
-            }
-            HorizontalPagerIndicator(
-                pagerState = pagerState,
-                modifier = Modifier.padding(16.dp),
-            )
-
-//            BaseLazyList.MessageList()
-        }
-//        自动滚动
-        if (pagerState.pageCount > 0) {
-            LaunchedEffect(pagerState.currentPage) {
+                //   自动滚动
                 if (pagerState.pageCount > 0) {
-                    delay(2000)
-                    pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
+                    LaunchedEffect(pagerState.currentPage) {
+                        if (pagerState.pageCount > 0) {
+                            delay(2000)
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
+                    }
+                }
+            }
+            itemsIndexed(articlesState.value) { idx, article ->
+                if(idx > 0) Divider(thickness = 1.dp)
+                LazyListItem.ArticleItem(article)
+            }
+            item {
+//                Text("加载更多")
+//                LoadingIndicator()
+                val layoutInfo = listState.layoutInfo
+                val shouldLoadMore = remember {
+                    derivedStateOf {
+                        val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                            ?: return@derivedStateOf true
+                        lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                    }
+                }
+                LaunchedEffect(shouldLoadMore) {
+                    snapshotFlow { shouldLoadMore.value }
+                        .collect {
+                            requestArtcle(++articlePageCount)
+                            Log.d("gggg", "gggg++")
+                        }
                 }
             }
         }
+    }
+
+    @Composable
+    fun Square() {
 
     }
+
     @Composable
-    fun Square(){
+    fun Wx() {
 
     }
+
     @Composable
-    fun Wx(){
+    fun SystemView() {
 
     }
-    @Composable
-    fun SystemView(){
 
-    }
     @Composable
-    fun Project(){
+    fun Project() {
 
     }
 }

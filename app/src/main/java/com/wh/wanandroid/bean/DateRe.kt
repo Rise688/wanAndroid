@@ -21,7 +21,7 @@ data class BaseListResponseBody<T>(
 //文章
 data class ArticleResponseBody(
     @Json(name = "curPage") val curPage: Int,
-    @Json(name = "datas") var datas: MutableList<Article>,
+    @Json(name = "datas") var datas: List<Article>,
     @Json(name = "offset") val offset: Int,
     @Json(name = "over") val over: Boolean,
     @Json(name = "pageCount") val pageCount: Int,
@@ -53,13 +53,13 @@ data class Article(
     @Json(name = "shareUser") val shareUser: String,
     @Json(name = "superChapterId") val superChapterId: Int,
     @Json(name = "superChapterName") val superChapterName: String,
-    @Json(name = "tags") val tags: MutableList<Tag>,
+    @Json(name = "tags") val tags: List<Tag>,
     @Json(name = "title") val title: String,
     @Json(name = "type") val type: Int,
     @Json(name = "userId") val userId: Int,
     @Json(name = "visible") val visible: Int,
     @Json(name = "zan") val zan: Int,
-    @Json(name = "top") var top: String
+    @Json(name = "top") val top: String?
 )
 
 data class Tag(
