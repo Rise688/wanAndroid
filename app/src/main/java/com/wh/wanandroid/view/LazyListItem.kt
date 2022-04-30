@@ -1,6 +1,7 @@
 package com.wh.wanandroid.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -22,9 +23,10 @@ class LazyListItem {
 
     companion object {
         @Composable
-        fun ArticleItem(article: Article) {
+        fun ArticleItem(article: Article,clickEvent:()->Unit) {
             Column(
-                Modifier.background(Color.White).fillMaxWidth().padding(8.dp, 3.dp),
+                Modifier.background(Color.White).fillMaxWidth().padding(8.dp, 3.dp)
+                    .clickable(onClick = clickEvent),
             ) {
                 Row(
                     modifier = Modifier.height(24.dp)

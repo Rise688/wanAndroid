@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChangeConsumed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.integerArrayResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -307,10 +309,21 @@ class MainActivity : FragmentActivity() {
                 val intent = Intent(this, LoginActivity::class.java)
                 startActivity(intent)
             }
-            "TODO清单" -> {}
+            "TODO清单" -> {
+                val intent = Intent(this, AgenWebActivity::class.java)
+                intent.putExtra("url","https://www.zhihu.com/")
+                startActivity(intent)
+            }
             "夜间模式" -> {}
             "退出登录" -> {}
         }
+    }
+
+    fun OnClickEvent(url : String,title : String){
+        val intent = Intent(this, AgenWebActivity::class.java)
+        intent.putExtra("url",url)
+        intent.putExtra("title",title)
+        startActivity(intent)
     }
 
     @OptIn(ExperimentalPagerApi::class)
@@ -357,11 +370,10 @@ class MainActivity : FragmentActivity() {
             }
             itemsIndexed(articlesState.value) { idx, article ->
                 if(idx > 0) Divider(thickness = 1.dp)
-                LazyListItem.ArticleItem(article)
+                LazyListItem.ArticleItem(article) {OnClickEvent(article.link,article.title)}
             }
             item {
 //                Text("加载更多")
-//                LoadingIndicator()
                 val layoutInfo = listState.layoutInfo
                 val shouldLoadMore = remember {
                     derivedStateOf {

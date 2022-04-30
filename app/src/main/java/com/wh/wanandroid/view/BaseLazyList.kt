@@ -18,19 +18,19 @@ import com.wh.wanandroid.bean.ArticleResponseBody
 
 class BaseLazyList {
     companion object {
-        @Composable
-        fun MessageList(articles: List<Article>) {
-            Box(Modifier.background(Color.Gray)) {
-                LazyColumn(
-                    modifier = Modifier, //.border(5.dp, color = Color.Blue),
-                    contentPadding = PaddingValues(0.dp,0.dp,0.dp,5.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.5.dp)
-                ){
-                    items(articles) { article ->
-                        LazyListItem.ArticleItem(article)
-                    }
-                }
-            }
-        }
+//        @Composable
+//        fun MessageList(articles: List<Article>) {
+//            Box(Modifier.background(Color.Gray)) {
+//                LazyColumn(
+//                    modifier = Modifier, //.border(5.dp, color = Color.Blue),
+//                    contentPadding = PaddingValues(0.dp,0.dp,0.dp,5.dp),
+//                    verticalArrangement = Arrangement.spacedBy(0.5.dp)
+//                ){
+//                    items(articles) { article ->
+//                        LazyListItem.ArticleItem(article)
+//                    }
+//                }
+//            }
+//        }
     }
 }
