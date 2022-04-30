@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wh.wanandroid.bean.Article
+import com.wh.wanandroid.bean.WXChapterBean
 import com.wh.wanandroid.view.CardHelper.Companion.CardBlue
 import com.wh.wanandroid.view.CardHelper.Companion.CardRed
 
@@ -90,6 +91,10 @@ class LazyListItem {
                     }
                 }
             }
+        }
+        @Composable
+        fun WxChapterItem(wxChapterBean: WXChapterBean,clickEvent:()->Unit){
+
         }
     }
 }

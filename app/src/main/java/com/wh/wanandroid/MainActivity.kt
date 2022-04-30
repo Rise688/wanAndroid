@@ -3,15 +3,13 @@ package com.wh.wanandroid
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,40 +21,22 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChangeConsumed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.integerArrayResource
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import com.wh.wanandroid.bean.*
-import com.wh.wanandroid.request.RetrofitHelper
+import com.wh.wanandroid.ViewModel.HomeViewModel
+import com.wh.wanandroid.ViewModel.SquareViewModel
 import com.wh.wanandroid.request.requestPic
-import com.wh.wanandroid.ui.theme.Shapes
 import com.wh.wanandroid.ui.theme.WanAndroidTheme
-import com.wh.wanandroid.view.BaseLazyList
+import com.wh.wanandroid.ui.theme.customShape
 import com.wh.wanandroid.view.LazyListItem
-import io.reactivex.Observer
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.observers.DisposableObserver
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -70,9 +50,9 @@ val messages = mutableListOf<Message>(
 //    Message(Icons.Outlined.Settings,"设置"),
     Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
-var bannerDate = mutableStateOf(listOf<Banner>())
-var articlesState = mutableStateOf(listOf<Article>())
-var articlePageCount = 0
+val homeModel = HomeViewModel()
+var articlesState = homeModel.arti
+var bannerDate = homeModel.bann
 
 class MainActivity : FragmentActivity() {
 
@@ -87,55 +67,9 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
-        RetrofitHelper.service.getBanners()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : Observer<HttpResult<List<Banner>>> {
-                override fun onComplete() {}
-                override fun onSubscribe(d: Disposable) {}
-                override fun onNext(t: HttpResult<List<Banner>>) {
-                    Log.d("gggg", t.toString())
-                    bannerDate.value = t.data
-                }
-
-                override fun onError(t: Throwable) {
-                    Log.d("gggg", t.toString())
-                }
-            })
-        requestArtcle(articlePageCount)
-//        RetrofitHelper.service.getTopArticles()
-//            .subscribeOn(Schedulers.io())
-//            .observeOn(AndroidSchedulers.mainThread())
-//            .subscribe(object : Observer<HttpResult<List<Article>>> {
-//                override fun onComplete() {}
-//                override fun onSubscribe(d: Disposable) {}
-//                override fun onNext(t: HttpResult<List<Article>>) {
-//                    Log.d("gggg", t.toString())
-//                    articlesState.value = t.data
-//                }
-//
-//                override fun onError(t: Throwable) {
-////                    TODO()
-//                }
-//            })
+        homeModel.init()
     }
-    fun requestArtcle(num : Int){
-        RetrofitHelper.service.getArticles(num)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(object : Observer<HttpResult<ArticleResponseBody>> {
-                override fun onComplete() {}
-                override fun onSubscribe(d: Disposable) {}
-                override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    Log.d("gggg", t.toString())
-                    articlesState.apply { value = value + t.data.datas }
-                }
 
-                override fun onError(t: Throwable) {
-                    TODO()
-                }
-            })
-    }
     @Composable
     fun MainView() {
         val scaffoldState = rememberScaffoldState()
@@ -154,7 +88,6 @@ class MainActivity : FragmentActivity() {
                             onClick = {
                                 scope.launch {
                                     scaffoldState.drawerState.open()
-
                                 }
                             }
                         ) {
@@ -170,7 +103,6 @@ class MainActivity : FragmentActivity() {
                         ) {
                             Icon(Icons.Filled.Search, null)
                         }
-
                     }
                 )
             },
@@ -226,23 +158,6 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    fun customShape() = object : Shape {
-        override fun createOutline(
-            size: Size,
-            layoutDirection: LayoutDirection,
-            density: Density
-        ): Outline {
-            return Outline.Rectangle(
-                Rect(
-                    0f,
-                    0f,
-                    size.width * 5 / 6,
-                    size.height, /* width */ /* height */
-                )
-            )
-        }
-    }
-
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     fun DrawerContent(
@@ -274,8 +189,6 @@ class MainActivity : FragmentActivity() {
                 MessageRow(message) { clickEvent(message.itemText) }
             }
         }
-
-        // 编写逻辑
         // 如果 drawer 已经展开了，那么点击返回键收起而不是直接退出 app
         BackHandler(enabled = scaffoldState.drawerState.isOpen) {
             scope.launch {
@@ -329,6 +242,7 @@ class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Home() {
+        var articlePageCount = 0
         val pagerState = rememberPagerState(initialPage = 0, infiniteLoop = true,//总页数
             pageCount = bannerDate.value.size,
             //预加载的个数
@@ -344,9 +258,7 @@ class MainActivity : FragmentActivity() {
             item{
                 Box(contentAlignment = Alignment.BottomEnd) {
                     HorizontalPager(
-    //                    count = bannerDate.value.size,
                         state = pagerState,
-                        //                modifier = Modifier.clickable(onClick = { onClick(list[pagerState.currentPage].linkUrl) })
                     ) { page ->
                         imageState[page].value?.asImageBitmap()?.let { bitmap ->
                             Image(
@@ -356,6 +268,7 @@ class MainActivity : FragmentActivity() {
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
+
                     }
                 }
                 //   自动滚动
@@ -368,9 +281,11 @@ class MainActivity : FragmentActivity() {
                     }
                 }
             }
-            itemsIndexed(articlesState.value) { idx, article ->
-                if(idx > 0) Divider(thickness = 1.dp)
-                LazyListItem.ArticleItem(article) {OnClickEvent(article.link,article.title)}
+            articlesState.value.apply {
+                itemsIndexed(this) { idx, article ->
+                    if (idx > 0) Divider(thickness = 1.dp)
+                    LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
+                }
             }
             item {
 //                Text("加载更多")
@@ -385,8 +300,7 @@ class MainActivity : FragmentActivity() {
                 LaunchedEffect(shouldLoadMore) {
                     snapshotFlow { shouldLoadMore.value }
                         .collect {
-                            requestArtcle(++articlePageCount)
-                            Log.d("gggg", "gggg++")
+                            homeModel.requestArticle(++articlePageCount)
                         }
                 }
             }
@@ -395,12 +309,44 @@ class MainActivity : FragmentActivity() {
 
     @Composable
     fun Square() {
-
+        val squareModel = SquareViewModel()
+        val sqArtiState = squareModel.sqArti
+        squareModel.init()
+        var articlePageCount = 0
+        val listState = rememberLazyListState()
+        LazyColumn(state = listState){
+            sqArtiState.value.apply {
+                itemsIndexed(this) { idx, article ->
+                    if (idx > 0) Divider(thickness = 1.dp)
+                    LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
+                }
+            }
+            item {
+//                Text("加载更多")
+                val layoutInfo = listState.layoutInfo
+                val shouldLoadMore = remember {
+                    derivedStateOf {
+                        val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                            ?: return@derivedStateOf true
+                        lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                    }
+                }
+                LaunchedEffect(shouldLoadMore) {
+                    snapshotFlow { shouldLoadMore.value }
+                        .collect {
+                            squareModel.requestSquareArtcle(++articlePageCount)
+                        }
+                }
+            }
+        }
     }
 
     @Composable
     fun Wx() {
+        val listState = rememberLazyListState()
+        LazyRow(){
 
+        }
     }
 
     @Composable
