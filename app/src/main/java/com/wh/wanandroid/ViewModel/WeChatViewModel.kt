@@ -1,5 +1,7 @@
 package com.wh.wanandroid.ViewModel
 
+import android.util.Log
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.bean.ArticleResponseBody
@@ -10,15 +12,20 @@ import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import retrofit2.http.Path
 
 class WeChatViewModel {
 
     var wxName = mutableStateOf(listOf<WXChapterBean>())
-    var wxArti = mutableStateOf(listOf<Article>())
+    var wxArtiSum = emptyList<MutableState<List<Article>>>()
+    var countList = arrayOf<Int>()
     fun init(){
         requestWxName()
     }
+//    fun initActi(){
+//        countList.forEachIndexed{i,page ->
+//            requestWxArticle(i)
+//        }
+//    }
     fun requestWxName(){
         RetrofitHelper.service.getWXChapters()
             .subscribeOn(Schedulers.io())
@@ -27,22 +34,30 @@ class WeChatViewModel {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<MutableList<WXChapterBean>>) {
-                    wxName.value = wxName.value + t.data
+                    wxName.value = t.data
+                    countList = t.data.map { 0 }.toTypedArray()
+                    wxArtiSum = t.data.map { mutableStateOf(emptyList()) }
+//                    initActi()
                 }
                 override fun onError(t: Throwable) {}
             })
     }
-    fun requestWxArticle(id: Int, page: Int){
-        RetrofitHelper.service.getWXArticles(id,page)
+    fun requestWxArticle(idx: Int){
+        val id = wxName.value[idx].id
+        val page = countList[idx]++
+        RetrofitHelper.service.getWXArticles(id, page)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<HttpResult<ArticleResponseBody>> {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    wxArti.value = wxArti.value + t.data.datas
+                    wxArtiSum[idx].value = wxArtiSum[idx].value + t.data.datas
+                    Log.d("ggg", "$idx -> ${wxArtiSum[idx].value.size}: $id")
                 }
-                override fun onError(t: Throwable) {}
+                override fun onError(t: Throwable) {
+                    Log.d("ggg", "$idx -> $id")
+                }
             })
     }
 }

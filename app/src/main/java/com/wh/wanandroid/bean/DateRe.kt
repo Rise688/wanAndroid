@@ -36,7 +36,7 @@ data class Article(
     @Json(name = "author") val author: String,
     @Json(name = "chapterId") val chapterId: Int,
     @Json(name = "chapterName") val chapterName: String,
-    @Json(name = "collect") var collect: Boolean,
+    @Json(name = "collect") var collect: Boolean = false,
     @Json(name = "courseId") val courseId: Int,
     @Json(name = "desc") val desc: String,
     @Json(name = "envelopePic") val envelopePic: String,
@@ -49,7 +49,7 @@ data class Article(
     @Json(name = "prefix") val prefix: String,
     @Json(name = "projectLink") val projectLink: String,
     @Json(name = "publishTime") val publishTime: Long,
-    @Json(name = "shareDate") val shareDate: String,
+    @Json(name = "shareDate") val shareDate: String?, // nmsl 这个字段可能是空的
     @Json(name = "shareUser") val shareUser: String,
     @Json(name = "superChapterId") val superChapterId: Int,
     @Json(name = "superChapterName") val superChapterName: String,

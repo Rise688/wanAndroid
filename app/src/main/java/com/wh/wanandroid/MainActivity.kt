@@ -2,10 +2,13 @@ package com.wh.wanandroid
 
 
 import android.content.Intent
+import android.content.res.Resources
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,15 +29,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.VerticalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.wh.wanandroid.ViewModel.HomeViewModel
 import com.wh.wanandroid.ViewModel.SquareViewModel
+import com.wh.wanandroid.ViewModel.WeChatViewModel
 import com.wh.wanandroid.request.requestPic
-import com.wh.wanandroid.ui.theme.WanAndroidTheme
-import com.wh.wanandroid.ui.theme.customShape
+import com.wh.wanandroid.ui.theme.*
 import com.wh.wanandroid.view.LazyListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -68,6 +73,8 @@ class MainActivity : FragmentActivity() {
             }
         }
         homeModel.init()
+        wxChapterViewModel.init()
+//        wxChapterViewModel.requestWxArticle(408,0)
     }
 
     @Composable
@@ -80,6 +87,7 @@ class MainActivity : FragmentActivity() {
             scaffoldState = scaffoldState,
             topBar = {
                 TopAppBar(
+                    elevation = 0.dp,
                     title = {
                         Text("主页")
                     },
@@ -134,7 +142,6 @@ class MainActivity : FragmentActivity() {
                             selected = selectedItem == index,
                             onClick = {
                                 selectedItem = index
-
                             }
                         )
                     }
@@ -341,14 +348,81 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    val wxChapterViewModel = WeChatViewModel()
+    @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Wx() {
-        val listState = rememberLazyListState()
-        LazyRow(){
-
+        val scope = rememberCoroutineScope()
+        val pagerState = rememberPagerState(
+            initialPage = 0, //总页数
+            pageCount = wxChapterViewModel.wxArtiSum.size,
+            //预加载的个数
+            initialOffscreenLimit = 1,
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val rowScrollState = rememberLazyListState()
+            LaunchedEffect(pagerState.currentPage) {
+                rowScrollState.scrollToItem(pagerState.currentPage)
+            }
+            LazyRow(
+                state = rowScrollState,
+                modifier = Modifier
+                    .background(MaterialTheme.colors.primary)
+                    ,
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                itemsIndexed(wxChapterViewModel.wxName.value) { i, wxCBean ->
+                    //颜色
+                    val color = if (pagerState.currentPage == i) trueWhite else grayWhite
+                    Column(
+                        Modifier.clickable {
+                            scope.launch {
+                                pagerState.animateScrollToPage(i)
+                            }
+                        },
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(wxCBean.name, color = color,
+                            modifier = Modifier.padding(top = 5.dp,start = 15.dp,end = 15.dp,bottom = 15.dp),
+                            fontSize = 14.sp)
+                    }
+                }
+            }
+            HorizontalPager(state = pagerState) { page ->
+                val listState = rememberLazyListState()
+//                wxChapterViewModel.requestWxArticle(page)
+                LazyColumn(state = listState){
+                    wxChapterViewModel.wxArtiSum.get(page).value.apply {
+                        itemsIndexed(this) { idx, article ->
+                            if (idx > 0) Divider(thickness = 1.dp)
+                            LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
+                        }
+                    }
+                    //  加载更多
+                    item {
+                        val layoutInfo = listState.layoutInfo
+                        val shouldLoadMore = remember {
+                            derivedStateOf {
+                                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                    ?: return@derivedStateOf true
+                                lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                            }
+                        }
+                        LaunchedEffect(shouldLoadMore) {
+                            snapshotFlow { shouldLoadMore.value }
+                                .collect {
+                                    wxChapterViewModel.requestWxArticle(page)
+                                }
+                        }
+                    }
+                }
+            }
         }
     }
-
     @Composable
     fun SystemView() {
 
