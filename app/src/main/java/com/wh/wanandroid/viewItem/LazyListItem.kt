@@ -1,4 +1,4 @@
-package com.wh.wanandroid.view
+package com.wh.wanandroid.viewItem
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.bean.WXChapterBean
-import com.wh.wanandroid.view.CardHelper.Companion.CardBlue
-import com.wh.wanandroid.view.CardHelper.Companion.CardRed
+import com.wh.wanandroid.viewItem.CardHelper.Companion.CardBlue
+import com.wh.wanandroid.viewItem.CardHelper.Companion.CardRed
 
 class LazyListItem {
 
@@ -92,9 +92,6 @@ class LazyListItem {
                 }
             }
         }
-        @Composable
-        fun WxChapterItem(wxChapterBean: WXChapterBean,clickEvent:()->Unit){
 
-        }
     }
 }

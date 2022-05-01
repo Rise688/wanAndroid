@@ -1,10 +1,11 @@
-package com.wh.wanandroid
+package com.wh.wanandroid.activity
 
 import android.os.Bundle
 import android.view.MenuItem
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.just.agentweb.AgentWeb
+import com.wh.wanandroid.R
 
 
 class AgenWebActivity : AppCompatActivity() {

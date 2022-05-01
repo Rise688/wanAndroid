@@ -99,7 +99,7 @@ data class Friend(
 
 //知识体系
 data class KnowledgeTreeBody(
-    @Json(name = "children") val children: MutableList<Knowledge>,
+    @Json(name = "children") val children: MutableList<KnowledgeTreeBody>,
     @Json(name = "courseId") val courseId: Int,
     @Json(name = "id") val id: Int,
     @Json(name = "name") val name: String,
@@ -117,6 +117,7 @@ data class Knowledge(
     @Json(name = "parentChapterId") val parentChapterId: Int,
     @Json(name = "visible") val visible: Int
 ) : Serializable
+
 
 // 登录数据
 data class LoginData(

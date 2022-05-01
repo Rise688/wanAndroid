@@ -1,9 +1,8 @@
-package com.wh.wanandroid.view
+package com.wh.wanandroid.viewItem
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,8 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wh.wanandroid.ui.theme.Blue
-import com.wh.wanandroid.ui.theme.Red
+import com.wh.wanandroid.activity.ui.theme.Blue
+import com.wh.wanandroid.activity.ui.theme.Red
 
 class CardHelper {
     companion object {

@@ -2,13 +2,10 @@ package com.wh.wanandroid
 
 
 import android.content.Intent
-import android.content.res.Resources
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,23 +21,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.VerticalPager
 import com.google.accompanist.pager.rememberPagerState
 import com.wh.wanandroid.ViewModel.HomeViewModel
 import com.wh.wanandroid.ViewModel.SquareViewModel
+import com.wh.wanandroid.ViewModel.SystemViewModel
 import com.wh.wanandroid.ViewModel.WeChatViewModel
+import com.wh.wanandroid.activity.AgenWebActivity
+import com.wh.wanandroid.activity.SyaArtiActivity
+import com.wh.wanandroid.bean.KnowledgeTreeBody
 import com.wh.wanandroid.request.requestPic
-import com.wh.wanandroid.ui.theme.*
-import com.wh.wanandroid.view.LazyListItem
+import com.wh.wanandroid.activity.ui.theme.*
+import com.wh.wanandroid.viewItem.LazyListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,7 +64,6 @@ var bannerDate = homeModel.bann
 
 class MainActivity : FragmentActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -74,7 +76,6 @@ class MainActivity : FragmentActivity() {
         }
         homeModel.init()
         wxChapterViewModel.init()
-//        wxChapterViewModel.requestWxArticle(408,0)
     }
 
     @Composable
@@ -231,7 +232,7 @@ class MainActivity : FragmentActivity() {
             }
             "TODO清单" -> {
                 val intent = Intent(this, AgenWebActivity::class.java)
-                intent.putExtra("url","https://www.zhihu.com/")
+                intent.putExtra("url", "https://www.zhihu.com/")
                 startActivity(intent)
             }
             "夜间模式" -> {}
@@ -239,10 +240,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    fun OnClickEvent(url : String,title : String){
+    fun OnClickEvent(url: String, title: String) {
         val intent = Intent(this, AgenWebActivity::class.java)
-        intent.putExtra("url",url)
-        intent.putExtra("title",title)
+        intent.putExtra("url", url)
+        intent.putExtra("title", title)
         startActivity(intent)
     }
 
@@ -250,10 +251,12 @@ class MainActivity : FragmentActivity() {
     @Composable
     fun Home() {
         var articlePageCount = 0
-        val pagerState = rememberPagerState(initialPage = 0, infiniteLoop = true,//总页数
+        val pagerState = rememberPagerState(
+            initialPage = 0, infiniteLoop = true,//总页数
             pageCount = bannerDate.value.size,
             //预加载的个数
-            initialOffscreenLimit = 1,)//初始页面
+            initialOffscreenLimit = 1,
+        )//初始页面
         val imageState = bannerDate.value.map { banner ->
             requestPic.loadImage(
                 context = LocalContext.current,
@@ -261,8 +264,8 @@ class MainActivity : FragmentActivity() {
             )
         }
         val listState = rememberLazyListState()
-        LazyColumn(state = listState){
-            item{
+        LazyColumn(state = listState) {
+            item {
                 Box(contentAlignment = Alignment.BottomEnd) {
                     HorizontalPager(
                         state = pagerState,
@@ -321,7 +324,7 @@ class MainActivity : FragmentActivity() {
         squareModel.init()
         var articlePageCount = 0
         val listState = rememberLazyListState()
-        LazyColumn(state = listState){
+        LazyColumn(state = listState) {
             sqArtiState.value.apply {
                 itemsIndexed(this) { idx, article ->
                     if (idx > 0) Divider(thickness = 1.dp)
@@ -349,6 +352,7 @@ class MainActivity : FragmentActivity() {
     }
 
     val wxChapterViewModel = WeChatViewModel()
+
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Wx() {
@@ -370,8 +374,7 @@ class MainActivity : FragmentActivity() {
             LazyRow(
                 state = rowScrollState,
                 modifier = Modifier
-                    .background(MaterialTheme.colors.primary)
-                    ,
+                    .background(MaterialTheme.colors.primary),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -386,20 +389,32 @@ class MainActivity : FragmentActivity() {
                         },
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(wxCBean.name, color = color,
-                            modifier = Modifier.padding(top = 5.dp,start = 15.dp,end = 15.dp,bottom = 15.dp),
-                            fontSize = 14.sp)
+                        Text(
+                            wxCBean.name, color = color,
+                            modifier = Modifier.padding(
+                                top = 5.dp,
+                                start = 15.dp,
+                                end = 15.dp,
+                                bottom = 15.dp
+                            ),
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }
             HorizontalPager(state = pagerState) { page ->
                 val listState = rememberLazyListState()
 //                wxChapterViewModel.requestWxArticle(page)
-                LazyColumn(state = listState){
+                LazyColumn(state = listState) {
                     wxChapterViewModel.wxArtiSum.get(page).value.apply {
                         itemsIndexed(this) { idx, article ->
                             if (idx > 0) Divider(thickness = 1.dp)
-                            LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
+                            LazyListItem.ArticleItem(article) {
+                                OnClickEvent(
+                                    article.link,
+                                    article.title
+                                )
+                            }
                         }
                     }
                     //  加载更多
@@ -423,13 +438,58 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+
     @Composable
     fun SystemView() {
+        val intent = Intent(this, SyaArtiActivity::class.java)
+        val sysModel = SystemViewModel()
+        sysModel.init()
+        val listState = rememberLazyListState()
+        LazyColumn(state = listState) {
+            itemsIndexed(sysModel.sysTree.value) { idx, klBody ->
+                Column(
+                    Modifier
+                        .background(Color.White)
+                        .fillMaxWidth()
+                        .clickable(onClick = {
+                            intent.putExtra("body",klBody)
+                            startActivity(intent)
+                        }),
+                ){
+                if (idx > 0) Divider(thickness = 1.dp)
+                Text(
+                    text = klBody.name,
+                    style = TextStyle(
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 18.sp,
+                        letterSpacing = 0.5.sp
+                    ),
+                    modifier = Modifier.padding(15.dp,10.dp)
+                )
+                var sys: String = ""
+                klBody.forEachLeaf{ leaf ->
+                    sys += "   ${leaf.name}"
+                }
+                Text(sys.trim(),
+                    modifier = Modifier.padding(15.dp,0.dp,50.dp,10.dp),
+                    style = MaterialTheme.typography.body2,
+                    color = Color.Gray)
+                }
+            }
+        }
+    }
 
+    fun KnowledgeTreeBody.forEachLeaf(onLeaf: (KnowledgeTreeBody) -> Unit) {
+        if(children.isEmpty()) {
+            onLeaf(this)
+        } else children.forEach {
+            it.forEachLeaf(onLeaf)
+        }
     }
 
     @Composable
     fun Project() {
 
     }
+
 }

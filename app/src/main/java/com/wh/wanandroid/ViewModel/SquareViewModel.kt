@@ -13,6 +13,7 @@ import io.reactivex.schedulers.Schedulers
 class SquareViewModel {
 
     var sqArti = mutableStateOf(listOf<Article>())
+
     fun init(){
         requestSquareArtcle(0)
     }
