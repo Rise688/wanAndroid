@@ -1,6 +1,7 @@
 package com.wh.wanandroid
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.wh.wanandroid.ViewModel.LoginViewModel
 import com.wh.wanandroid.activity.ui.theme.WanAndroidTheme
 
 
@@ -37,12 +39,12 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    val now = remember{ mutableStateOf(true)}
+                    val now = remember { mutableStateOf(true) }
                     Scaffold(
                         topBar = {
                             TopAppBar(
                                 title = {
-                                    if(now.value) Text("登录")
+                                    if (now.value) Text("登录")
                                     else Text("注册")
                                 },
                                 navigationIcon = {
@@ -58,38 +60,40 @@ class LoginActivity : ComponentActivity() {
                                 )
 
                         },
-                    ){
+                    ) {
                         Box(
                             Modifier
                                 .fillMaxSize()
-                                .padding(0.dp, 0.dp, 0.dp, 50.dp), Alignment.Center) {
-                            if(now.value) Lon(now)
+                                .padding(0.dp, 0.dp, 0.dp, 50.dp), Alignment.Center
+                        ) {
+                            if (now.value) Lon(now)
                             else Reg(now)
 
                         }
                     }
-                    }
                 }
             }
         }
+
     }
+
     @Composable
     fun Reg(now: MutableState<Boolean>) {
-        var userName by remember{ mutableStateOf("")}
-        var password by remember{ mutableStateOf("")}
-        var passwordAgain by remember{ mutableStateOf("")}
-        var passwordHidden by remember{ mutableStateOf(true)}
+        var userName by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var passwordAgain by remember { mutableStateOf("") }
+        var passwordHidden by remember { mutableStateOf(true) }
         // 获取按钮的状态
         val interactionState = remember { MutableInteractionSource() }
         // 使用 Kotlin 的解构方法
         val (text, textColor, buttonColor) = when {
-            interactionState.collectIsPressedAsState().value  ->
+            interactionState.collectIsPressedAsState().value ->
                 ButtonState("登录", Color.White, Color.Gray)
-            else -> ButtonState( "登录", Color.White, Color.Blue)
+            else -> ButtonState("登录", Color.White, Color.Blue)
         }
         Column(
             modifier = Modifier
-                .padding(50.dp,10.dp,50.dp,10.dp),
+                .padding(50.dp, 10.dp, 50.dp, 10.dp),
             horizontalAlignment = Alignment.End
         ) {
             TextField(
@@ -110,7 +114,7 @@ class LoginActivity : ComponentActivity() {
                 trailingIcon = {
                     IconButton(onClick = {
 
-                    }){
+                    }) {
 //                        Icon(Icons.Filled., null)
                     }
                 },
@@ -135,11 +139,11 @@ class LoginActivity : ComponentActivity() {
                         onClick = {
                             passwordHidden = !passwordHidden
                         }
-                    ){
+                    ) {
                         Icon(Icons.Filled.Visibility, null)
                     }
                 },
-                visualTransformation = if(passwordHidden)
+                visualTransformation = if (passwordHidden)
                     PasswordVisualTransformation() else VisualTransformation.None
             )
             TextField(
@@ -163,11 +167,11 @@ class LoginActivity : ComponentActivity() {
                         onClick = {
                             passwordHidden = !passwordHidden
                         }
-                    ){
+                    ) {
                         Icon(Icons.Filled.Visibility, null)
                     }
                 },
-                visualTransformation = if(passwordHidden)
+                visualTransformation = if (passwordHidden)
                     PasswordVisualTransformation() else VisualTransformation.None
             )
             Button(
@@ -199,23 +203,25 @@ class LoginActivity : ComponentActivity() {
             )
         }
     }
+
+    val lonModel = LoginViewModel()
+
     @Composable
     fun Lon(now: MutableState<Boolean>) {
-        var userName by remember{ mutableStateOf("")}
-        var password by remember{ mutableStateOf("")}
-        var passwordHidden by remember{ mutableStateOf(true)}
+        var userName by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var passwordHidden by remember { mutableStateOf(true) }
         // 获取按钮的状态
         val interactionState = remember { MutableInteractionSource() }
         // 使用 Kotlin 的解构方法
         val (text, textColor, buttonColor) = when {
-            interactionState.collectIsPressedAsState().value  ->
+            interactionState.collectIsPressedAsState().value ->
                 ButtonState("登录", Color.White, Color.Gray)
-            else -> ButtonState( "登录", Color.White, Color.Blue)
+            else -> ButtonState("登录", Color.White, Color.Blue)
         }
         Column(
             modifier = Modifier
-//                .fillMaxWidth()
-                .padding(50.dp,10.dp,50.dp,10.dp),
+                .padding(50.dp, 10.dp, 50.dp, 10.dp),
             horizontalAlignment = Alignment.End
         ) {
             TextField(
@@ -236,7 +242,7 @@ class LoginActivity : ComponentActivity() {
                 trailingIcon = {
                     IconButton(onClick = {
 
-                    }){
+                    }) {
 //                        Icon(Icons.Filled., null)
                     }
                 },
@@ -261,11 +267,11 @@ class LoginActivity : ComponentActivity() {
                         onClick = {
                             passwordHidden = !passwordHidden
                         }
-                    ){
+                    ) {
                         Icon(Icons.Filled.Visibility, null)
                     }
                 },
-                visualTransformation = if(passwordHidden)
+                visualTransformation = if (passwordHidden)
                     PasswordVisualTransformation() else VisualTransformation.None
             )
             Button(
@@ -280,9 +286,16 @@ class LoginActivity : ComponentActivity() {
                     backgroundColor = buttonColor,
                 ),
                 onClick = {
-
+                    if (userName.equals("") || password.equals("")) {
+                        Toast.makeText(this@LoginActivity, "账号或密码不能为空", Toast.LENGTH_SHORT).show()
+                    }else{
+                        lonModel.login(userName, password)
+                    }
+                    if(!userName.equals("") && lonModel.logindata.value?.username == userName){
+                        Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_SHORT).show()
+                        this@LoginActivity.finish()
+                    }
                 }
-
             ) {
                 Text(text = text, color = textColor)
             }
@@ -298,5 +311,5 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-
+}
 

@@ -7,6 +7,10 @@ data class HttpResult<T>(
     @Json(name = "data") val data: T
 ) : BaseBean()
 
+data class HttpResultNullable<T>(
+    @Json(name = "data") val data: T?
+) : BaseBean()
+
 // 通用的带有列表数据的实体
 data class BaseListResponseBody<T>(
     @Json(name = "curPage") val curPage: Int,

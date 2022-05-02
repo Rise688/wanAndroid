@@ -34,15 +34,14 @@ import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import com.wh.wanandroid.ViewModel.HomeViewModel
-import com.wh.wanandroid.ViewModel.SquareViewModel
-import com.wh.wanandroid.ViewModel.SystemViewModel
-import com.wh.wanandroid.ViewModel.WeChatViewModel
+import com.wh.wanandroid.ViewModel.*
 import com.wh.wanandroid.activity.AgenWebActivity
 import com.wh.wanandroid.activity.SyaArtiActivity
 import com.wh.wanandroid.bean.KnowledgeTreeBody
 import com.wh.wanandroid.request.requestPic
 import com.wh.wanandroid.activity.ui.theme.*
+import com.wh.wanandroid.app.App
+import com.wh.wanandroid.utils.Preference
 import com.wh.wanandroid.viewItem.LazyListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -58,9 +57,11 @@ val messages = mutableListOf<Message>(
 //    Message(Icons.Outlined.Settings,"设置"),
     Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
+val mainModel = MainViewModel()
 val homeModel = HomeViewModel()
 var articlesState = homeModel.arti
 var bannerDate = homeModel.bann
+val openDialog = mutableStateOf(true)
 
 class MainActivity : FragmentActivity() {
 
@@ -71,9 +72,11 @@ class MainActivity : FragmentActivity() {
                 // A surface container using the 'background' color from the theme
                 Surface(color = MaterialTheme.colors.background) {
                     MainView()
+                    SetALert()
                 }
             }
         }
+        App.context = applicationContext
         homeModel.init()
         wxChapterViewModel.init()
     }
@@ -166,6 +169,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     fun DrawerContent(
@@ -236,7 +240,60 @@ class MainActivity : FragmentActivity() {
                 startActivity(intent)
             }
             "夜间模式" -> {}
-            "退出登录" -> {}
+            "退出登录" -> {
+                openDialog.value = true
+            }
+        }
+    }
+
+    @Composable
+    fun SetALert(){
+        val scope = rememberCoroutineScope()
+        if (openDialog.value) {
+            AlertDialog(
+                onDismissRequest = {
+                    // 当用户点击对话框以外的地方或者按下系统返回键将会执行的代码
+                    openDialog.value = false
+                },
+                title = {
+                    Text(
+                        text = "是否退出登录？",
+                        fontWeight = FontWeight.W700,
+                        style = MaterialTheme.typography.h6
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            mainModel.outlogin()
+                            scope.launch {
+                                Preference.clearPreference()
+                            }
+                            Toast.makeText(this, "已退出登录", Toast.LENGTH_SHORT).show()
+                            openDialog.value = false
+                        },
+                    ) {
+                        Text(
+                            "确认",
+                            fontWeight = FontWeight.W700,
+                            style = MaterialTheme.typography.button
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            openDialog.value = false
+                        }
+                    ) {
+                        Text(
+                            "取消",
+                            fontWeight = FontWeight.W700,
+                            style = MaterialTheme.typography.button
+                        )
+                    }
+                }
+            )
         }
     }
 
@@ -452,7 +509,7 @@ class MainActivity : FragmentActivity() {
                         .background(Color.White)
                         .fillMaxWidth()
                         .clickable(onClick = {
-                            intent.putExtra("body",klBody)
+                            intent.putExtra("body", klBody)
                             startActivity(intent)
                         }),
                 ){

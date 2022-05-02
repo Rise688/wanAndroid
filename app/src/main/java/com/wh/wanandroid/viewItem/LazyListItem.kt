@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wh.wanandroid.ViewModel.CollectViewMoedl
 import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.bean.WXChapterBean
 import com.wh.wanandroid.viewItem.CardHelper.Companion.CardBlue
@@ -23,8 +26,10 @@ import com.wh.wanandroid.viewItem.CardHelper.Companion.CardRed
 class LazyListItem {
 
     companion object {
-        @Composable
+        val collectModel = CollectViewMoedl()
+            @Composable
         fun ArticleItem(article: Article,clickEvent:()->Unit) {
+            var collect by remember { mutableStateOf( article.collect ) }
             Column(
                 Modifier.background(Color.White).fillMaxWidth().padding(8.dp, 3.dp)
                     .clickable(onClick = clickEvent),
@@ -86,8 +91,18 @@ class LazyListItem {
                         style = MaterialTheme.typography.body2
                     )
                     IconButton(onClick = {
+                        if(collect){
+                            collectModel.cancelColArti(article.id)
+                        }else{
+                            collectModel.addColArti(article.id)
+                        }
+                        collect = !collect
                     }, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Filled.Favorite, null)
+                        if(collect){
+                            Icon(Icons.Outlined.FavoriteBorder, null,tint = Color.Red)
+                        }else{
+                            Icon(Icons.Outlined.FavoriteBorder, null)
+                        }
                     }
                 }
             }

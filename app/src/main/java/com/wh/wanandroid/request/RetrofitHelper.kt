@@ -4,6 +4,8 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.wh.wanandroid.BuildConfig
 import com.wh.wanandroid.api.ApiService
+import com.wh.wanandroid.request.interceptor.CookieInterceptor
+import com.wh.wanandroid.request.interceptor.HeaderInterceptor
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -65,15 +67,15 @@ object RetrofitHelper {
 
         builder.run {
             addInterceptor(httpLoggingInterceptor)
-//            addInterceptor(HeaderInterceptor())
-//            addInterceptor(SaveCookieInterceptor())
+            addInterceptor(HeaderInterceptor())
+            addInterceptor(CookieInterceptor())
 //            addInterceptor(CacheInterceptor())
 //            cache(cache)  //添加缓存
             connectTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             readTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             writeTimeout(DEFAULT_TIMEOUT, TimeUnit.SECONDS)
             retryOnConnectionFailure(true) // 错误重连
-            // cookieJar(CookieManager())
+//             cookieJar(CookieManager())
         }
         return builder.build()
     }

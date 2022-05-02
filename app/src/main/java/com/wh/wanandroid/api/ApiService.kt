@@ -77,7 +77,7 @@ interface ApiService {
     @POST("user/login")
     @FormUrlEncoded
     fun loginWanAndroid(@Field("username") username: String,
-                        @Field("password") password: String): Observable<HttpResult<LoginData>>
+                        @Field("password") password: String): Observable<HttpResultNullable<LoginData>>
 
     /**
      * 注册
