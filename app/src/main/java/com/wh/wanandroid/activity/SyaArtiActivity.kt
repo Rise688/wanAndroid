@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.wh.wanandroid.SearchActivity
 import com.wh.wanandroid.ViewModel.SystemViewModel
 import com.wh.wanandroid.activity.ui.theme.WanAndroidTheme
@@ -130,37 +132,40 @@ class SyaArtiActivity : ComponentActivity() {
             }
             HorizontalPager(state = pagerState) { page ->
                 val listState = rememberLazyListState()
-//                wxChapterViewModel.requestWxArticle(page)
-                LazyColumn(state = listState) {
-                    systemViewModel.sysArtiSum.get(page).value.apply {
-                        itemsIndexed(this) { idx, article ->
-                            if (idx > 0) Divider(thickness = 1.dp)
-                            LazyListItem.ArticleItem(article) {
-                                OnClickEvent(
-                                    article.link,
-                                    article.title
-                                )
-                            }
-                        }
-                    }
-                    //  加载更多
-                    item {
-                        val layoutInfo = listState.layoutInfo
-                        val shouldLoadMore = remember {
-                            derivedStateOf {
-                                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                                    ?: return@derivedStateOf true
-                                lastVisibleItem.index == layoutInfo.totalItemsCount - 1
-                            }
-                        }
-                        LaunchedEffect(shouldLoadMore) {
-                            snapshotFlow { shouldLoadMore.value }
-                                .collect {
-                                    systemViewModel.requestSysAticle(page,body.children[page].id)
+                val refreshState = rememberSwipeRefreshState(isRefreshing = false)
+                    LazyColumn(state = listState) {
+                        systemViewModel.sysArtiSum.get(page).value.apply {
+                            itemsIndexed(this) { idx, article ->
+                                if (idx > 0) Divider(thickness = 1.dp)
+                                LazyListItem.ArticleItem(article) {
+                                    OnClickEvent(
+                                        article.link,
+                                        article.title
+                                    )
                                 }
+                            }
+                        }
+                        //  加载更多
+                        item {
+                            val layoutInfo = listState.layoutInfo
+                            val shouldLoadMore = remember {
+                                derivedStateOf {
+                                    val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                        ?: return@derivedStateOf true
+                                    lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                                }
+                            }
+                            LaunchedEffect(shouldLoadMore) {
+                                snapshotFlow { shouldLoadMore.value }
+                                    .collect {
+                                        systemViewModel.requestSysAticle(
+                                            page,
+                                            body.children[page].id
+                                        )
+                                    }
+                            }
                         }
                     }
-                }
             }
         }
     }

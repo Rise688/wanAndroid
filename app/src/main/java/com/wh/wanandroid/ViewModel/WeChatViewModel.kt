@@ -21,6 +21,9 @@ class WeChatViewModel {
     fun init(){
         requestWxName()
     }
+    fun fresh(){
+        init()
+    }
     fun requestWxName(){
         RetrofitHelper.service.getWXChapters()
             .subscribeOn(Schedulers.io())
@@ -47,10 +50,10 @@ class WeChatViewModel {
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
                     wxArtiSum[idx].value = wxArtiSum[idx].value + t.data.datas
-                    Log.d("ggg", "$idx -> ${wxArtiSum[idx].value.size}: $id")
+//                    Log.d("ggg", "$idx -> ${wxArtiSum[idx].value.size}: $id")
                 }
                 override fun onError(t: Throwable) {
-                    Log.d("ggg", "$idx -> $id")
+//                    Log.d("ggg", "$idx -> $id")
                 }
             })
     }

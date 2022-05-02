@@ -291,13 +291,17 @@ class LoginActivity : ComponentActivity() {
                     }else{
                         lonModel.login(userName, password)
                     }
-                    if(!userName.equals("") && lonModel.logindata.value?.username == userName){
-                        Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_SHORT).show()
-                        this@LoginActivity.finish()
-                    }
                 }
             ) {
                 Text(text = text, color = textColor)
+                if(!userName.equals("") && lonModel.logindata.value?.username.equals(userName)){
+                    Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_SHORT).show()
+                    this@LoginActivity.finish()
+                }
+                if(!lonModel.data.value.errorMsg.equals("")){
+                    Toast.makeText(this@LoginActivity, lonModel.data.value.errorMsg, Toast.LENGTH_SHORT).show()
+                    lonModel.data.value.errorMsg = ""
+                }
             }
             Text(
                 text = "注册",

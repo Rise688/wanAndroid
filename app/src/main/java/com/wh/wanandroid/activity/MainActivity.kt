@@ -3,6 +3,7 @@ package com.wh.wanandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -34,6 +35,8 @@ import androidx.fragment.app.FragmentActivity
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.wh.wanandroid.ViewModel.*
 import com.wh.wanandroid.activity.AgenWebActivity
 import com.wh.wanandroid.activity.SyaArtiActivity
@@ -61,7 +64,7 @@ val mainModel = MainViewModel()
 val homeModel = HomeViewModel()
 var articlesState = homeModel.arti
 var bannerDate = homeModel.bann
-val openDialog = mutableStateOf(true)
+val openDialog = mutableStateOf(false)
 
 class MainActivity : FragmentActivity() {
 
@@ -307,7 +310,6 @@ class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Home() {
-        var articlePageCount = 0
         val pagerState = rememberPagerState(
             initialPage = 0, infiniteLoop = true,//总页数
             pageCount = bannerDate.value.size,
@@ -320,55 +322,59 @@ class MainActivity : FragmentActivity() {
                 url = banner.imagePath,
             )
         }
-        val listState = rememberLazyListState()
-        LazyColumn(state = listState) {
-            item {
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    HorizontalPager(
-                        state = pagerState,
-                    ) { page ->
-                        imageState[page].value?.asImageBitmap()?.let { bitmap ->
-                            Image(
-                                bitmap = bitmap,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
+        SwipeRefresh(state = refreshState, onRefresh = { homeModel.fresh() })
+        {
+            val listState = rememberLazyListState()
+            LazyColumn(state = listState) {
+                item {
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        HorizontalPager(
+                            state = pagerState,
+                        ) { page ->
+                            imageState[page].value?.asImageBitmap()?.let { bitmap ->
+                                Image(
+                                    bitmap = bitmap,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
 
+                        }
                     }
-                }
-                //   自动滚动
-                if (pagerState.pageCount > 0) {
-                    LaunchedEffect(pagerState.currentPage) {
-                        if (pagerState.pageCount > 0) {
-                            delay(2000)
-                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                    //   自动滚动
+                    if (pagerState.pageCount > 0) {
+                        LaunchedEffect(pagerState.currentPage) {
+                            if (pagerState.pageCount > 0) {
+                                delay(2000)
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            }
                         }
                     }
                 }
-            }
-            articlesState.value.apply {
-                itemsIndexed(this) { idx, article ->
-                    if (idx > 0) Divider(thickness = 1.dp)
-                    LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
-                }
-            }
-            item {
-//                Text("加载更多")
-                val layoutInfo = listState.layoutInfo
-                val shouldLoadMore = remember {
-                    derivedStateOf {
-                        val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                            ?: return@derivedStateOf true
-                        lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                articlesState.value.apply {
+                    itemsIndexed(this) { idx, article ->
+                        if (idx > 0) Divider(thickness = 1.dp)
+                        LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
                     }
                 }
-                LaunchedEffect(shouldLoadMore) {
-                    snapshotFlow { shouldLoadMore.value }
-                        .collect {
-                            homeModel.requestArticle(++articlePageCount)
+                item {
+        //                Text("加载更多")
+                    val layoutInfo = listState.layoutInfo
+                    val shouldLoadMore = remember {
+                        derivedStateOf {
+                            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                ?: return@derivedStateOf true
+                            lastVisibleItem.index == layoutInfo.totalItemsCount - 1
                         }
+                    }
+                    LaunchedEffect(shouldLoadMore) {
+                        snapshotFlow { shouldLoadMore.value }
+                            .collect {
+                                homeModel.requestArticle(homeModel.pageCount)
+                            }
+                    }
                 }
             }
         }
@@ -379,37 +385,44 @@ class MainActivity : FragmentActivity() {
         val squareModel = SquareViewModel()
         val sqArtiState = squareModel.sqArti
         squareModel.init()
-        var articlePageCount = 0
         val listState = rememberLazyListState()
-        LazyColumn(state = listState) {
-            sqArtiState.value.apply {
-                itemsIndexed(this) { idx, article ->
-                    if (idx > 0) Divider(thickness = 1.dp)
-                    LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
-                }
-            }
-            item {
-//                Text("加载更多")
-                val layoutInfo = listState.layoutInfo
-                val shouldLoadMore = remember {
-                    derivedStateOf {
-                        val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                            ?: return@derivedStateOf true
-                        lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
+        SwipeRefresh(state = refreshState, onRefresh = { squareModel.fresh() })
+        {
+            LazyColumn(state = listState) {
+                sqArtiState.value.apply {
+                    itemsIndexed(this) { idx, article ->
+                        if (idx > 0) Divider(thickness = 1.dp)
+                        LazyListItem.ArticleItem(article) {
+                            OnClickEvent(
+                                article.link,
+                                article.title
+                            )
+                        }
                     }
                 }
-                LaunchedEffect(shouldLoadMore) {
-                    snapshotFlow { shouldLoadMore.value }
-                        .collect {
-                            squareModel.requestSquareArtcle(++articlePageCount)
+                item {
+//                Text("加载更多")
+                    val layoutInfo = listState.layoutInfo
+                    val shouldLoadMore = remember {
+                        derivedStateOf {
+                            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                ?: return@derivedStateOf true
+                            lastVisibleItem.index == layoutInfo.totalItemsCount - 1
                         }
+                    }
+                    LaunchedEffect(shouldLoadMore) {
+                        snapshotFlow { shouldLoadMore.value }
+                            .collect {
+                                squareModel.requestSquareArtcle(squareModel.pageCount)
+                            }
+                    }
                 }
             }
         }
     }
 
     val wxChapterViewModel = WeChatViewModel()
-
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Wx() {
@@ -420,77 +433,83 @@ class MainActivity : FragmentActivity() {
             //预加载的个数
             initialOffscreenLimit = 1,
         )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            val rowScrollState = rememberLazyListState()
-            LaunchedEffect(pagerState.currentPage) {
-                rowScrollState.scrollToItem(pagerState.currentPage)
-            }
-            LazyRow(
-                state = rowScrollState,
+        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
+        SwipeRefresh(state = refreshState, onRefresh = { wxChapterViewModel.fresh() })
+        {
+            Column(
                 modifier = Modifier
-                    .background(MaterialTheme.colors.primary),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxSize()
             ) {
-                itemsIndexed(wxChapterViewModel.wxName.value) { i, wxCBean ->
-                    //颜色
-                    val color = if (pagerState.currentPage == i) trueWhite else grayWhite
-                    Column(
-                        Modifier.clickable {
-                            scope.launch {
-                                pagerState.animateScrollToPage(i)
-                            }
-                        },
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            wxCBean.name, color = color,
-                            modifier = Modifier.padding(
-                                top = 5.dp,
-                                start = 15.dp,
-                                end = 15.dp,
-                                bottom = 15.dp
-                            ),
-                            fontSize = 14.sp
-                        )
+                val rowScrollState = rememberLazyListState()
+                LaunchedEffect(pagerState.currentPage) {
+                    rowScrollState.scrollToItem(pagerState.currentPage)
+                }
+                LazyRow(
+                    state = rowScrollState,
+                    modifier = Modifier
+                        .background(MaterialTheme.colors.primary),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    itemsIndexed(wxChapterViewModel.wxName.value) { i, wxCBean ->
+                        //颜色
+                        val color = if (pagerState.currentPage == i) trueWhite else grayWhite
+                        Column(
+                            Modifier.clickable {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(i)
+                                }
+                            },
+                            verticalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                wxCBean.name, color = color,
+                                modifier = Modifier.padding(
+                                    top = 5.dp,
+                                    start = 15.dp,
+                                    end = 15.dp,
+                                    bottom = 15.dp
+                                ),
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
-            }
-            HorizontalPager(state = pagerState) { page ->
-                val listState = rememberLazyListState()
+                HorizontalPager(state = pagerState) { page ->
+
+                    val listState = rememberLazyListState()
 //                wxChapterViewModel.requestWxArticle(page)
-                LazyColumn(state = listState) {
-                    wxChapterViewModel.wxArtiSum.get(page).value.apply {
-                        itemsIndexed(this) { idx, article ->
-                            if (idx > 0) Divider(thickness = 1.dp)
-                            LazyListItem.ArticleItem(article) {
-                                OnClickEvent(
-                                    article.link,
-                                    article.title
-                                )
-                            }
-                        }
-                    }
-                    //  加载更多
-                    item {
-                        val layoutInfo = listState.layoutInfo
-                        val shouldLoadMore = remember {
-                            derivedStateOf {
-                                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                                    ?: return@derivedStateOf true
-                                lastVisibleItem.index == layoutInfo.totalItemsCount - 1
-                            }
-                        }
-                        LaunchedEffect(shouldLoadMore) {
-                            snapshotFlow { shouldLoadMore.value }
-                                .collect {
-                                    wxChapterViewModel.requestWxArticle(page)
+                    LazyColumn(state = listState) {
+                        wxChapterViewModel.wxArtiSum.get(page).value.apply {
+                            itemsIndexed(this) { idx, article ->
+                                if (idx > 0) Divider(thickness = 1.dp)
+                                LazyListItem.ArticleItem(article) {
+                                    OnClickEvent(
+                                        article.link,
+                                        article.title
+                                    )
                                 }
+                            }
+                        }
+                        //  加载更多
+                        item {
+                            val layoutInfo = listState.layoutInfo
+                            val shouldLoadMore = remember {
+                                derivedStateOf {
+                                    val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                        ?: return@derivedStateOf true
+                                    lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                                }
+                            }
+                            LaunchedEffect(shouldLoadMore) {
+                                snapshotFlow { shouldLoadMore.value }
+                                    .collect {
+                                        wxChapterViewModel.requestWxArticle(page)
+                                    }
+                            }
                         }
                     }
+
                 }
             }
         }

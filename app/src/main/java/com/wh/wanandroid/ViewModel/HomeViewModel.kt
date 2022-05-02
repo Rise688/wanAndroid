@@ -22,12 +22,15 @@ class HomeViewModel : ViewModel() {
 
     var arti = mutableStateOf(listOf<Article>())
     var bann = mutableStateOf(listOf<Banner>())
-
+    var pageCount = 0
     fun init(){
-        requestArticle(0)
+        requestArticle(pageCount)
         requestBanner()
     }
-
+    fun fresh(){
+        pageCount = 0
+        requestArticle(0)
+    }
     fun requestArticle(num : Int){
         RetrofitHelper.service.getArticles(num)
             .subscribeOn(Schedulers.io())
@@ -36,11 +39,16 @@ class HomeViewModel : ViewModel() {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    arti.value = arti.value + t.data.datas
+                    if(num == 0){
+                        arti.value = t.data.datas
+                    }else{
+                        arti.value = arti.value + t.data.datas
+                    }
                 }
                 override fun onError(t: Throwable) {}
             })
-        }
+        pageCount++
+    }
     fun requestBanner(){
         RetrofitHelper.service.getBanners()
             .subscribeOn(Schedulers.io())

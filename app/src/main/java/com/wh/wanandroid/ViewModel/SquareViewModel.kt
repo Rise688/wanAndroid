@@ -13,11 +13,14 @@ import io.reactivex.schedulers.Schedulers
 class SquareViewModel {
 
     var sqArti = mutableStateOf(listOf<Article>())
-
+    var pageCount = 0
     fun init(){
+        requestSquareArtcle(pageCount)
+    }
+    fun fresh(){
+        pageCount = 0
         requestSquareArtcle(0)
     }
-
     fun requestSquareArtcle(num : Int){
         RetrofitHelper.service.getSquareList(num)
             .subscribeOn(Schedulers.io())
@@ -26,9 +29,14 @@ class SquareViewModel {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    sqArti.value = sqArti.value + t.data.datas
+                    if(num == 0) {
+                        sqArti.value = t.data.datas
+                    }else{
+                        sqArti.value = sqArti.value + t.data.datas
+                    }
                 }
                 override fun onError(t: Throwable) {}
             })
+        pageCount++
     }
 }
