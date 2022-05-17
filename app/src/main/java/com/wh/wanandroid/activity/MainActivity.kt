@@ -19,14 +19,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,6 +47,7 @@ import com.wh.wanandroid.bean.KnowledgeTreeBody
 import com.wh.wanandroid.request.requestPic
 import com.wh.wanandroid.activity.ui.theme.*
 import com.wh.wanandroid.app.App
+import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.utils.Preference
 import com.wh.wanandroid.viewItem.LazyListItem
 import kotlinx.coroutines.CoroutineScope
@@ -57,12 +61,10 @@ val messages = mutableListOf<Message>(
     Message(Icons.Outlined.Share, "我的分享"),
     Message(Icons.Outlined.PendingActions, "TODO清单"),
     Message(Icons.Outlined.NightsStay, "夜间模式"),
-//    Message(Icons.Outlined.Settings,"设置"),
     Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
 val mainModel = MainViewModel()
 val homeModel = HomeViewModel()
-var articlesState = homeModel.arti
 var bannerDate = homeModel.bann
 val openDialog = mutableStateOf(false)
 
@@ -82,6 +84,7 @@ class MainActivity : FragmentActivity() {
         App.context = applicationContext
         homeModel.init()
         wxChapterViewModel.init()
+        homeModel.mToast.observe(this) { showToast(it) }
     }
 
     @Composable
@@ -96,7 +99,7 @@ class MainActivity : FragmentActivity() {
                 TopAppBar(
                     elevation = 0.dp,
                     title = {
-                        Text("主页")
+                        Text(items[selectedItem])
                     },
                     navigationIcon = {
                         IconButton(
@@ -121,17 +124,17 @@ class MainActivity : FragmentActivity() {
                     }
                 )
             },
-            floatingActionButton = {
-                IconButton(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape)
-                        .border(1.5.dp, MaterialTheme.colors.secondary, shape = CircleShape),
-                    onClick = { }
-                ) {
-                    Icon(Icons.Filled.ArrowUpward, null)
-                }
-            },
+//            floatingActionButton = {
+//                IconButton(
+//                    modifier = Modifier
+//                        .size(50.dp)
+//                        .clip(CircleShape)
+//                        .border(1.5.dp, MaterialTheme.colors.secondary, shape = CircleShape),
+//                    onClick = { }
+//                ) {
+//                    Icon(Icons.Filled.ArrowUpward, null)
+//                }
+//            },
             bottomBar = {
                 BottomNavigation {
                     items.forEachIndexed { index, item ->
@@ -139,9 +142,9 @@ class MainActivity : FragmentActivity() {
                             icon = {
                                 when (index) {
                                     0 -> Icon(Icons.Filled.Home, contentDescription = null)
-                                    1 -> Icon(Icons.Filled.Favorite, contentDescription = null)
-                                    2 -> Icon(Icons.Filled.Favorite, contentDescription = null)
-                                    3 -> Icon(Icons.Filled.Favorite, contentDescription = null)
+                                    1 -> Icon(Icons.Filled.TravelExplore, contentDescription = null)
+                                    2 -> Icon(painterResource(R.drawable.ic_wechat),modifier = Modifier.size(24.dp),contentDescription = null)
+                                    3 -> Icon(Icons.Filled.AccountTree, contentDescription = null)
                                     else -> Icon(Icons.Filled.Settings, contentDescription = null)
                                 }
                             },
@@ -169,6 +172,13 @@ class MainActivity : FragmentActivity() {
                     else -> Project()
                 }
             }
+//            homeModel.mToast.observeAsState().value?.apply{
+//                if(this != "") {
+//                    showToast(this)
+//                    homeModel.mToast.postValue("")
+//                }
+//                Log.d("frgggg","333333")
+//            }
         }
     }
 
@@ -300,6 +310,10 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    fun showToast(mes : String){
+        Toast.makeText(this,mes,Toast.LENGTH_SHORT).show()
+    }
+
     fun OnClickEvent(url: String, title: String) {
         val intent = Intent(this, AgenWebActivity::class.java)
         intent.putExtra("url", url)
@@ -322,15 +336,48 @@ class MainActivity : FragmentActivity() {
                 url = banner.imagePath,
             )
         }
-        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
-        SwipeRefresh(state = refreshState, onRefresh = { homeModel.fresh() })
-        {
+        val refreshing by homeModel.isRefreshing
+        val refreshState = rememberSwipeRefreshState(refreshing)
+        SwipeRefresh(
+            state = refreshState, onRefresh = { homeModel.fresh() }
+        ) {
+            var currentPageIndex = 0
+            var executeChangePage by remember { mutableStateOf(false) }
             val listState = rememberLazyListState()
+            val listData by homeModel.mHomeArticleData.observeAsState()
             LazyColumn(state = listState) {
                 item {
                     Box(contentAlignment = Alignment.BottomEnd) {
                         HorizontalPager(
                             state = pagerState,
+                            modifier = Modifier.pointerInput(pagerState.currentPage) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        //PointerEventPass.Initial - 本控件优先处理手势，处理后再交给子组件
+                                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                                        //获取到第一根按下的手指
+                                        val dragEvent = event.changes.firstOrNull()
+                                        when {
+                                            //当前移动手势是否已被消费
+                                            dragEvent!!.positionChangeConsumed() -> {
+                                                return@awaitPointerEventScope
+                                            }
+                                            //是否已经按下(忽略按下手势已消费标记)
+                                            dragEvent.changedToDownIgnoreConsumed() -> {
+                                                //记录下当前的页面索引值
+                                                currentPageIndex = pagerState.currentPage
+                                            }
+                                            //是否已经抬起(忽略按下手势已消费标记)
+                                            dragEvent.changedToUpIgnoreConsumed() -> {
+                                                //当pageCount大于1，且手指抬起时如果页面没有改变，就手动触发动画
+                                                if (currentPageIndex == pagerState.currentPage && pagerState.pageCount > 1) {
+                                                    executeChangePage = !executeChangePage
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         ) { page ->
                             imageState[page].value?.asImageBitmap()?.let { bitmap ->
                                 Image(
@@ -345,7 +392,7 @@ class MainActivity : FragmentActivity() {
                     }
                     //   自动滚动
                     if (pagerState.pageCount > 0) {
-                        LaunchedEffect(pagerState.currentPage) {
+                        LaunchedEffect(pagerState.currentPage, executeChangePage) {
                             if (pagerState.pageCount > 0) {
                                 delay(2000)
                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
@@ -353,8 +400,8 @@ class MainActivity : FragmentActivity() {
                         }
                     }
                 }
-                articlesState.value.apply {
-                    itemsIndexed(this) { idx, article ->
+                listData?.also {
+                    itemsIndexed(it) { idx, article ->
                         if (idx > 0) Divider(thickness = 1.dp)
                         LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
                     }
@@ -478,7 +525,6 @@ class MainActivity : FragmentActivity() {
                 HorizontalPager(state = pagerState) { page ->
 
                     val listState = rememberLazyListState()
-//                wxChapterViewModel.requestWxArticle(page)
                     LazyColumn(state = listState) {
                         wxChapterViewModel.wxArtiSum.get(page).value.apply {
                             itemsIndexed(this) { idx, article ->

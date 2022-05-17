@@ -53,7 +53,7 @@ data class Article(
     @Json(name = "prefix") val prefix: String,
     @Json(name = "projectLink") val projectLink: String,
     @Json(name = "publishTime") val publishTime: Long,
-    @Json(name = "shareDate") val shareDate: String?, // nmsl 这个字段可能是空的
+    @Json(name = "shareDate") val shareDate: String?, // 这个字段可能是空的
     @Json(name = "shareUser") val shareUser: String,
     @Json(name = "superChapterId") val superChapterId: Int,
     @Json(name = "superChapterName") val superChapterName: String,

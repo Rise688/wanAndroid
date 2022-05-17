@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.wh.wanandroid.bannerDate
 import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.bean.ArticleResponseBody
@@ -20,7 +21,11 @@ import io.reactivex.schedulers.Schedulers
 
 class HomeViewModel : ViewModel() {
 
-    var arti = mutableStateOf(listOf<Article>())
+    val mToast = MutableLiveData<String>()
+    val mHomeArticleData = MutableLiveData<List<Article>>()
+
+    var arti = listOf<Article>()
+    var isRefreshing = mutableStateOf(false)
     var bann = mutableStateOf(listOf<Banner>())
     var pageCount = 0
     fun init(){
@@ -28,6 +33,7 @@ class HomeViewModel : ViewModel() {
         requestBanner()
     }
     fun fresh(){
+        isRefreshing.value = true
         pageCount = 0
         requestArticle(0)
     }
@@ -40,9 +46,14 @@ class HomeViewModel : ViewModel() {
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
                     if(num == 0){
-                        arti.value = t.data.datas
+                        arti = t.data.datas
                     }else{
-                        arti.value = arti.value + t.data.datas
+                        arti = arti + t.data.datas
+                    }
+                    mHomeArticleData.postValue(arti)
+                    if(isRefreshing.value){
+                        isRefreshing.value = false
+                        mToast.postValue("已刷新")
                     }
                 }
                 override fun onError(t: Throwable) {}
@@ -57,12 +68,9 @@ class HomeViewModel : ViewModel() {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<List<Banner>>) {
-                    Log.d("gggg", t.toString())
                     bannerDate.value = t.data
                 }
-
                 override fun onError(t: Throwable) {
-                    Log.d("gggg", t.toString())
                 }
             })
     }

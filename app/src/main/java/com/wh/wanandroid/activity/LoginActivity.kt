@@ -1,5 +1,6 @@
 package com.wh.wanandroid
 
+import android.media.MediaDrm
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,16 +50,11 @@ class LoginActivity : ComponentActivity() {
                                     else Text("注册")
                                 },
                                 navigationIcon = {
-                                    IconButton(
-                                        onClick = {
-                                            this.finish()
-                                        } //do something
-                                    ) {
+                                    IconButton( onClick = { this.finish() } ) {
                                         Icon(Icons.Filled.ArrowBack, null)
                                     }
                                 },
-
-                                )
+                            )
 
                         },
                     ) {
@@ -68,14 +65,13 @@ class LoginActivity : ComponentActivity() {
                         ) {
                             if (now.value) Lon(now)
                             else Reg(now)
-
                         }
                     }
                 }
             }
         }
-
     }
+
 
     @Composable
     fun Reg(now: MutableState<Boolean>) {
@@ -239,13 +235,6 @@ class LoginActivity : ComponentActivity() {
                 label = {
                     Text("用户名")
                 },
-                trailingIcon = {
-                    IconButton(onClick = {
-
-                    }) {
-//                        Icon(Icons.Filled., null)
-                    }
-                },
             )
             TextField(
                 modifier = Modifier
@@ -294,17 +283,16 @@ class LoginActivity : ComponentActivity() {
                 }
             ) {
                 Text(text = text, color = textColor)
-                if(!userName.equals("") && lonModel.logindata.value?.username.equals(userName)){
+                if(userName != "" && lonModel.logindata.value?.username.equals(userName)){
                     Toast.makeText(this@LoginActivity, "登录成功", Toast.LENGTH_SHORT).show()
                     this@LoginActivity.finish()
                 }
-                if(!lonModel.data.value.errorMsg.equals("")){
-                    Toast.makeText(this@LoginActivity, lonModel.data.value.errorMsg, Toast.LENGTH_SHORT).show()
-                    lonModel.data.value.errorMsg = ""
+                lonModel.mToast.observeAsState().value?.apply {
+                    Toast.makeText(this@LoginActivity, this, Toast.LENGTH_SHORT).show()
                 }
             }
             Text(
-                text = "注册",
+                text = "无账号？去注册",
                 style = TextStyle(Color.Blue),
                 modifier = Modifier.clickable(
                     onClick = {
