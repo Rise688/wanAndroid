@@ -11,33 +11,36 @@ import io.reactivex.Observer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import retrofit2.http.Field
+import retrofit2.http.Path
 
-class SquareViewModel : ViewModel(){
-
+class ArtiListViewModel : ViewModel() {
     val mToast = MutableLiveData<String>()
     var isRefreshing = mutableStateOf(false)
-    var sqArti = mutableStateOf(listOf<Article>())
+    var Arti = mutableStateOf(listOf<Article>())
     var pageCount = 0
-    fun init(){
-        requestSquareArtcle(pageCount)
+    var Key = ""
+    fun init(key: String){
+        Key = key
+        queryKeyAtri(pageCount)
     }
     fun fresh(){
         isRefreshing.value = true
         pageCount = 0
-        requestSquareArtcle(0)
+        queryKeyAtri(0)
     }
-    fun requestSquareArtcle(num : Int){
-        RetrofitHelper.service.getSquareList(num)
+    fun queryKeyAtri(page: Int){
+        RetrofitHelper.service.queryBySearchKey(page, Key)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(object : Observer<HttpResult<ArticleResponseBody>> {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    if(num == 0) {
-                        sqArti.value = t.data.datas
+                    if(page == 0) {
+                        Arti.value = t.data.datas
                     }else{
-                        sqArti.value = sqArti.value + t.data.datas
+                        Arti.value = Arti.value + t.data.datas
                     }
                     if(isRefreshing.value){
                         isRefreshing.value = false

@@ -113,7 +113,7 @@ interface ApiService {
      * @param id article id
      */
     @POST("lg/collect/{id}/json")
-    fun addCollectArticle(@Path("id") id: Int): Observable<HttpResult<Any>>
+    fun addCollectArticle(@Path("id") id: Int): Observable<HttpResultNullable<Any>>
 
     /**
      * 收藏站外文章
@@ -134,7 +134,7 @@ interface ApiService {
      * @param id
      */
     @POST("lg/uncollect_originId/{id}/json")
-    fun cancelCollectArticle(@Path("id") id: Int): Observable<HttpResult<Any>>
+    fun cancelCollectArticle(@Path("id") id: Int): Observable<HttpResultNullable<Any>>
 
     /**
      * 收藏列表中取消收藏文章

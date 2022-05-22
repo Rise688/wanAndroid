@@ -23,7 +23,6 @@ class HomeViewModel : ViewModel() {
 
     val mToast = MutableLiveData<String>()
     val mHomeArticleData = MutableLiveData<List<Article>>()
-
     var arti = listOf<Article>()
     var isRefreshing = mutableStateOf(false)
     var bann = mutableStateOf(listOf<Banner>())

@@ -17,20 +17,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
-import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.wh.wanandroid.SearchActivity
+import com.wh.wanandroid.ViewModel.CollectViewModel
 import com.wh.wanandroid.ViewModel.SystemViewModel
 import com.wh.wanandroid.activity.ui.theme.WanAndroidTheme
 import com.wh.wanandroid.activity.ui.theme.grayWhite
@@ -80,6 +76,20 @@ class SyaArtiActivity : ComponentActivity() {
                 }
             }
         }
+    }
+    val collectModel = CollectViewModel
+    val collectEvent: (Boolean, Int) -> Unit = { col, id ->
+        if(col){
+            collectModel.cancelColArti(id)
+        }else{
+            collectModel.addColArti(id)
+        }
+    }
+    val onClickEvent : (String,String) -> Unit =  { url, title ->
+        val intent = Intent(this, AgenWebActivity::class.java)
+        intent.putExtra("url", url)
+        intent.putExtra("title", title)
+        startActivity(intent)
     }
     @OptIn(ExperimentalPagerApi::class)
     @Composable
@@ -137,12 +147,7 @@ class SyaArtiActivity : ComponentActivity() {
                         systemViewModel.sysArtiSum.get(page).value.apply {
                             itemsIndexed(this) { idx, article ->
                                 if (idx > 0) Divider(thickness = 1.dp)
-                                LazyListItem.ArticleItem(article) {
-                                    OnClickEvent(
-                                        article.link,
-                                        article.title
-                                    )
-                                }
+                                LazyListItem.ArticleItem(article, collectEvent,onClickEvent)
                             }
                         }
                         //  加载更多

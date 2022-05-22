@@ -3,7 +3,6 @@ package com.wh.wanandroid
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -13,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,7 +20,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -47,7 +44,6 @@ import com.wh.wanandroid.bean.KnowledgeTreeBody
 import com.wh.wanandroid.request.requestPic
 import com.wh.wanandroid.activity.ui.theme.*
 import com.wh.wanandroid.app.App
-import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.utils.Preference
 import com.wh.wanandroid.viewItem.LazyListItem
 import kotlinx.coroutines.CoroutineScope
@@ -63,10 +59,13 @@ val messages = mutableListOf<Message>(
     Message(Icons.Outlined.NightsStay, "夜间模式"),
     Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
+val collectModel = CollectViewModel
 val mainModel = MainViewModel()
 val homeModel = HomeViewModel()
 var bannerDate = homeModel.bann
 val openDialog = mutableStateOf(false)
+val squareModel = SquareViewModel()
+val wxChapterViewModel = WeChatViewModel()
 
 class MainActivity : FragmentActivity() {
 
@@ -85,6 +84,9 @@ class MainActivity : FragmentActivity() {
         homeModel.init()
         wxChapterViewModel.init()
         homeModel.mToast.observe(this) { showToast(it) }
+        collectModel.mToast.observe(this) { showToast(it) }
+        squareModel.mToast.observe(this) { showToast(it) }
+        wxChapterViewModel.mToast.observe(this) { showToast(it) }
     }
 
     @Composable
@@ -314,11 +316,20 @@ class MainActivity : FragmentActivity() {
         Toast.makeText(this,mes,Toast.LENGTH_SHORT).show()
     }
 
-    fun OnClickEvent(url: String, title: String) {
+    val onClickEvent : (String,String) -> Unit =  { url, title ->
         val intent = Intent(this, AgenWebActivity::class.java)
         intent.putExtra("url", url)
         intent.putExtra("title", title)
         startActivity(intent)
+    }
+
+
+    val collectEvent : (Boolean, Int) -> Unit = { col, id ->
+        if(col){
+            collectModel.cancelColArti(id)
+        }else{
+            collectModel.addColArti(id)
+        }
     }
 
     @OptIn(ExperimentalPagerApi::class)
@@ -338,13 +349,13 @@ class MainActivity : FragmentActivity() {
         }
         val refreshing by homeModel.isRefreshing
         val refreshState = rememberSwipeRefreshState(refreshing)
+        val listState = rememberLazyListState()
+        val listData by homeModel.mHomeArticleData.observeAsState()
         SwipeRefresh(
             state = refreshState, onRefresh = { homeModel.fresh() }
         ) {
             var currentPageIndex = 0
             var executeChangePage by remember { mutableStateOf(false) }
-            val listState = rememberLazyListState()
-            val listData by homeModel.mHomeArticleData.observeAsState()
             LazyColumn(state = listState) {
                 item {
                     Box(contentAlignment = Alignment.BottomEnd) {
@@ -403,25 +414,14 @@ class MainActivity : FragmentActivity() {
                 listData?.also {
                     itemsIndexed(it) { idx, article ->
                         if (idx > 0) Divider(thickness = 1.dp)
-                        LazyListItem.ArticleItem(article) { OnClickEvent(article.link, article.title) }
+                        LazyListItem.ArticleItem(article,collectEvent,onClickEvent)
+                        LaunchedEffect(it.size) {
+                            if(it.size - idx < 2) homeModel.requestArticle(homeModel.pageCount)
+                        }
                     }
                 }
                 item {
-        //                Text("加载更多")
-                    val layoutInfo = listState.layoutInfo
-                    val shouldLoadMore = remember {
-                        derivedStateOf {
-                            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                                ?: return@derivedStateOf true
-                            lastVisibleItem.index == layoutInfo.totalItemsCount - 1
-                        }
-                    }
-                    LaunchedEffect(shouldLoadMore) {
-                        snapshotFlow { shouldLoadMore.value }
-                            .collect {
-                                homeModel.requestArticle(homeModel.pageCount)
-                            }
-                    }
+        //             Text("加载更多")
                 }
             }
         }
@@ -429,23 +429,18 @@ class MainActivity : FragmentActivity() {
 
     @Composable
     fun Square() {
-        val squareModel = SquareViewModel()
         val sqArtiState = squareModel.sqArti
         squareModel.init()
         val listState = rememberLazyListState()
-        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
+        val refreshing by squareModel.isRefreshing
+        val refreshState = rememberSwipeRefreshState(refreshing)
         SwipeRefresh(state = refreshState, onRefresh = { squareModel.fresh() })
         {
             LazyColumn(state = listState) {
                 sqArtiState.value.apply {
                     itemsIndexed(this) { idx, article ->
                         if (idx > 0) Divider(thickness = 1.dp)
-                        LazyListItem.ArticleItem(article) {
-                            OnClickEvent(
-                                article.link,
-                                article.title
-                            )
-                        }
+                        LazyListItem.ArticleItem(article,collectEvent,onClickEvent)
                     }
                 }
                 item {
@@ -469,7 +464,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    val wxChapterViewModel = WeChatViewModel()
+
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun Wx() {
@@ -480,8 +475,10 @@ class MainActivity : FragmentActivity() {
             //预加载的个数
             initialOffscreenLimit = 1,
         )
-        val refreshState = rememberSwipeRefreshState(isRefreshing = false)
-        SwipeRefresh(state = refreshState, onRefresh = { wxChapterViewModel.fresh() })
+        var curPageId = 0
+        val refreshing by wxChapterViewModel.isRefreshing
+        val refreshState = rememberSwipeRefreshState(refreshing)
+        SwipeRefresh(state = refreshState, onRefresh = { wxChapterViewModel.fresh(curPageId) })
         {
             Column(
                 modifier = Modifier
@@ -489,6 +486,7 @@ class MainActivity : FragmentActivity() {
             ) {
                 val rowScrollState = rememberLazyListState()
                 LaunchedEffect(pagerState.currentPage) {
+                    curPageId = pagerState.currentPage
                     rowScrollState.scrollToItem(pagerState.currentPage)
                 }
                 LazyRow(
@@ -504,6 +502,7 @@ class MainActivity : FragmentActivity() {
                         Column(
                             Modifier.clickable {
                                 scope.launch {
+                                    curPageId = i
                                     pagerState.animateScrollToPage(i)
                                 }
                             },
@@ -529,12 +528,7 @@ class MainActivity : FragmentActivity() {
                         wxChapterViewModel.wxArtiSum.get(page).value.apply {
                             itemsIndexed(this) { idx, article ->
                                 if (idx > 0) Divider(thickness = 1.dp)
-                                LazyListItem.ArticleItem(article) {
-                                    OnClickEvent(
-                                        article.link,
-                                        article.title
-                                    )
-                                }
+                                LazyListItem.ArticleItem(article,collectEvent,onClickEvent)
                             }
                         }
                         //  加载更多

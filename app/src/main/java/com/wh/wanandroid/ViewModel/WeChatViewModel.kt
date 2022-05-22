@@ -3,6 +3,7 @@ package com.wh.wanandroid.ViewModel
 import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.MutableLiveData
 import com.wh.wanandroid.bean.Article
 import com.wh.wanandroid.bean.ArticleResponseBody
 import com.wh.wanandroid.bean.HttpResult
@@ -15,14 +16,18 @@ import io.reactivex.schedulers.Schedulers
 
 class WeChatViewModel {
 
+    val mToast = MutableLiveData<String>()
+    var isRefreshing = mutableStateOf(false)
     var wxName = mutableStateOf(listOf<WXChapterBean>())
     var wxArtiSum = emptyList<MutableState<List<Article>>>()
     var countList = arrayOf<Int>()
     fun init(){
         requestWxName()
     }
-    fun fresh(){
-        init()
+    fun fresh(curPageId : Int){
+        isRefreshing.value = true
+        countList[curPageId] = 0
+        requestWxArticle(curPageId)
     }
     fun requestWxName(){
         RetrofitHelper.service.getWXChapters()
@@ -49,7 +54,14 @@ class WeChatViewModel {
                 override fun onComplete() {}
                 override fun onSubscribe(d: Disposable) {}
                 override fun onNext(t: HttpResult<ArticleResponseBody>) {
-                    wxArtiSum[idx].value = wxArtiSum[idx].value + t.data.datas
+
+                    if(isRefreshing.value){
+                        wxArtiSum[idx].value = t.data.datas
+                        isRefreshing.value = false
+                        mToast.postValue("已刷新")
+                    }else{
+                        wxArtiSum[idx].value = wxArtiSum[idx].value + t.data.datas
+                    }
 //                    Log.d("ggg", "$idx -> ${wxArtiSum[idx].value.size}: $id")
                 }
                 override fun onError(t: Throwable) {

@@ -60,6 +60,8 @@ dependencies {
     implementation "androidx.room:room-runtime:$roomVersion"
     implementation "androidx.room:room-ktx:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"
+//    //分页库
+//    implementation 'androidx.paging:paging-runtime:3.0.0-beta01'
     //类瀑布流
     implementation 'com.google.accompanist:accompanist-flowlayout:0.24.7-alpha'
     //轮播图Pager
