@@ -3,6 +3,7 @@ package com.wh.wanandroid
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -39,36 +40,41 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.wh.wanandroid.ViewModel.*
 import com.wh.wanandroid.activity.AgenWebActivity
+import com.wh.wanandroid.activity.MyCollectActivity
 import com.wh.wanandroid.activity.SyaArtiActivity
 import com.wh.wanandroid.bean.KnowledgeTreeBody
 import com.wh.wanandroid.request.requestPic
 import com.wh.wanandroid.activity.ui.theme.*
 import com.wh.wanandroid.app.App
+import com.wh.wanandroid.app.Constant
 import com.wh.wanandroid.utils.Preference
 import com.wh.wanandroid.viewItem.LazyListItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.reflect.KProperty
 
 data class Message(var image: ImageVector, var itemText: String)
 
 val messages = mutableListOf<Message>(
     Message(Icons.Outlined.Favorite, "我的收藏"),
-    Message(Icons.Outlined.Share, "我的分享"),
-    Message(Icons.Outlined.PendingActions, "TODO清单"),
-    Message(Icons.Outlined.NightsStay, "夜间模式"),
+//    Message(Icons.Outlined.Share, "我的分享"),
+//    Message(Icons.Outlined.PendingActions, "TODO清单"),
+//    Message(Icons.Outlined.NightsStay, "夜间模式"),
     Message(Icons.Outlined.PowerSettingsNew, "退出登录")
 )
-val collectModel = CollectViewModel
 val mainModel = MainViewModel()
 val homeModel = HomeViewModel()
 var bannerDate = homeModel.bann
 val openDialog = mutableStateOf(false)
 val squareModel = SquareViewModel()
 val wxChapterViewModel = WeChatViewModel()
+var isLogin: Boolean by Preference(Constant.LOGIN_KEY, false)
+var userName : String by Preference(Constant.USERNAME_KEY, "")
+
 
 class MainActivity : FragmentActivity() {
-
+    val collectModel = CollectViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -191,25 +197,31 @@ class MainActivity : FragmentActivity() {
         scaffoldState: ScaffoldState,
         scope: CoroutineScope
     ) {
-
         Box {
-            Column(
-                modifier = Modifier.padding(15.dp)
-            ) {
-//                Image(
-//                    painter = Icons.Filled.People,
-//                    contentDescription = null,
-//                    modifier = Modifier
-//                        .clip(CircleShape)
-//                        .size(65.dp)
-//                        .border(BorderStroke(1.dp, Color.Gray), CircleShape)
-//                )
-                Spacer(Modifier.padding(vertical = 8.dp))
-                Text(
-                    text = "游客12345",
-                    style = MaterialTheme.typography.body2
-                )
+            if(isLogin){
+                Column(
+                    modifier = Modifier.padding(15.dp)
+                ) {
+                    Spacer(Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = userName,
+                        style = MaterialTheme.typography.body2
+                    )
+                }
+            }else{
+                Column(
+                    modifier = Modifier.padding(15.dp).clickable {
+                        val intent = Intent(this@MainActivity, LoginActivity::class.java)
+                        startActivity(intent) }
+                ) {
+                    Spacer(Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "去登陆",
+                        style = MaterialTheme.typography.body2
+                    )
+                }
             }
+
         }
         Column {
             messages.forEach { message ->
@@ -243,18 +255,17 @@ class MainActivity : FragmentActivity() {
     val clickEvent: (String) -> Unit = { tag ->
         when (tag) {
             "我的收藏" -> {
-                Toast.makeText(this@MainActivity, "我的收藏", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@MainActivity,MyCollectActivity::class.java))
             }
             "我的分享" -> {
-                val intent = Intent(this, LoginActivity::class.java)
-                startActivity(intent)
+
             }
             "TODO清单" -> {
-                val intent = Intent(this, AgenWebActivity::class.java)
-                intent.putExtra("url", "https://www.zhihu.com/")
-                startActivity(intent)
+
             }
-            "夜间模式" -> {}
+            "夜间模式" -> {
+
+            }
             "退出登录" -> {
                 openDialog.value = true
             }
@@ -283,6 +294,7 @@ class MainActivity : FragmentActivity() {
                             mainModel.outlogin()
                             scope.launch {
                                 Preference.clearPreference()
+                                isLogin = false
                             }
                             Toast.makeText(this, "已退出登录", Toast.LENGTH_SHORT).show()
                             openDialog.value = false
@@ -555,6 +567,14 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    fun KnowledgeTreeBody.forEachLeaf(onLeaf: (KnowledgeTreeBody) -> Unit) {
+        if(children.isEmpty()) {
+            onLeaf(this)
+        } else children.forEach {
+            it.forEachLeaf(onLeaf)
+        }
+    }
+
     @Composable
     fun SystemView() {
         val intent = Intent(this, SyaArtiActivity::class.java)
@@ -595,13 +615,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    fun KnowledgeTreeBody.forEachLeaf(onLeaf: (KnowledgeTreeBody) -> Unit) {
-        if(children.isEmpty()) {
-            onLeaf(this)
-        } else children.forEach {
-            it.forEachLeaf(onLeaf)
-        }
-    }
+
 
     @Composable
     fun Project() {

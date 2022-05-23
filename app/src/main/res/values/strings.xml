@@ -9,4 +9,5 @@
     <string name="title_activity_sys_arti">SysArtiActivity</string>
     <string name="title_activity_sya_arti">SyaArtiActivity</string>
     <string name="title_activity_arti_list">ArtiListActivity</string>
+    <string name="title_activity_my_collect">MyCollectActivity</string>
 </resources>

@@ -13,6 +13,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WanAndroid">
         <activity
+            android:name=".activity.MyCollectActivity"
+            android:exported="false"
+            android:label="@string/title_activity_my_collect"
+            android:theme="@style/Theme.WanAndroid" />
+        <activity
             android:name=".activity.ArtiListActivity"
             android:exported="false"
             android:label="@string/title_activity_arti_list"

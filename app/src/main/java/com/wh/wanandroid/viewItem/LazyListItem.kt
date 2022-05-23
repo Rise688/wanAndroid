@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wh.wanandroid.bean.Article
+import com.wh.wanandroid.bean.CollectionArticle
 import com.wh.wanandroid.viewItem.CardHelper.Companion.CardBlue
 import com.wh.wanandroid.viewItem.CardHelper.Companion.CardRed
 
@@ -101,12 +102,12 @@ class LazyListItem {
             }
         }
         @Composable
-        fun Ar(article: Article,clickEvent:()->Unit) {
-//            Log.d("ggggg", clickEvent.hashCode().toString())
-            var collect by remember { mutableStateOf( article.collect ) }
+        fun CollectArtiItem(article: CollectionArticle, collectEvent : (Boolean, Int) -> Unit, clickEvent:(String, String)->Unit) {
+            Log.d("ggggg", article.id.toString())
+            var collect by remember { mutableStateOf( true ) }
             Column(
                 Modifier.background(Color.White).fillMaxWidth().padding(8.dp, 3.dp)
-                    .clickable(onClick = clickEvent),
+                    .clickable(onClick = {clickEvent(article.link, article.title)}),
             ) {
                 Row(
                     modifier = Modifier.height(24.dp)
@@ -117,20 +118,11 @@ class LazyListItem {
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                     ){
-                        if(article.top == "1") {
-                            CardRed(Modifier,"置顶")
-                        }
-                        Box(Modifier.width(4.dp))
-                        if(article.fresh){
-                            CardRed(Modifier,"新")
-                        }else if(article.tags.isNotEmpty()){
-                            CardBlue(Modifier,"本站发布")
-                        }
                         Box(Modifier.width(4.dp))
                         Text(
                             modifier = Modifier.weight(1f),
                             color = Color.Gray,
-                            text = article.author,
+                            text = if(article.author == "")"匿名" else article.author,
                             style = MaterialTheme.typography.body2
                         )
                     }
@@ -160,11 +152,12 @@ class LazyListItem {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ){
                     Text(
-                        article.chapterName +"/"+ article.superChapterName,
+                        article.chapterName ,
                         color = Color.Gray,
                         style = MaterialTheme.typography.body2
                     )
                     IconButton(onClick = {
+                        collectEvent(collect,article.id)
                         collect = !collect
                     }, modifier = Modifier.size(36.dp)) {
                         if(collect){

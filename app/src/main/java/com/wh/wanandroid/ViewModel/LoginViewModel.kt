@@ -25,6 +25,8 @@ class LoginViewModel : ViewModel() {
 
     companion object{
         var isLogin: Boolean by Preference(Constant.LOGIN_KEY, false)
+        var userName : String by Preference(Constant.USERNAME_KEY, "")
+        var passWord : String by Preference(Constant.PASSWORD_KEY, "")
     }
     var logindata : MutableState<LoginData?> = mutableStateOf(null)
     private val mScope = MainScope()
@@ -41,6 +43,8 @@ class LoginViewModel : ViewModel() {
                         logindata.value = t.data
                         mScope.launch {
                             isLogin = true
+                            userName = username
+                            passWord = password
                         }
                     }
                 }

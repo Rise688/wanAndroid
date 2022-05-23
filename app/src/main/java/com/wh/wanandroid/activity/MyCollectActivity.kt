@@ -12,37 +12,29 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.wh.wanandroid.History
-import com.wh.wanandroid.ViewModel.ArtiListViewModel
 import com.wh.wanandroid.ViewModel.CollectViewModel
+import com.wh.wanandroid.ViewModel.MycolViewModel
 import com.wh.wanandroid.activity.ui.theme.WanAndroidTheme
-import com.wh.wanandroid.bean.ArticleResponseBody
-import com.wh.wanandroid.bean.HttpResult
-import com.wh.wanandroid.request.RetrofitHelper
-import com.wh.wanandroid.squareModel
 import com.wh.wanandroid.viewItem.LazyListItem
-import io.reactivex.Observer
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import kotlinx.coroutines.launch
 
-class ArtiListActivity : ComponentActivity() {
+class MyCollectActivity : ComponentActivity() {
+
+
+    val myColmodelc = MycolViewModel()
     val collectModel = CollectViewModel
-    val artiModel = ArtiListViewModel()
+
+    fun showToast(mes : String){
+        Toast.makeText(this,mes, Toast.LENGTH_SHORT).show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val intent = getIntent()
-        val key = intent.extras?.getString("key")
-        key?.apply { artiModel.init(this) }
-        artiModel.mToast.observe(this) { showToast(it) }
         collectModel.mToast.observe(this) { showToast(it) }
         setContent {
             WanAndroidTheme {
@@ -50,12 +42,12 @@ class ArtiListActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
-                ){
+                ) {
                     Scaffold(
                         topBar = {
                             TopAppBar(
                                 title = {
-                                    key?.apply { Text(this) }
+                                     Text("我的收藏")
                                 },
                                 navigationIcon = {
                                     IconButton(
@@ -69,17 +61,13 @@ class ArtiListActivity : ComponentActivity() {
                             )
                         },
                     ){
-                        ArtiList()
+                        MyCollectList()
                     }
+
                 }
             }
         }
     }
-
-    fun showToast(mes : String){
-        Toast.makeText(this,mes, Toast.LENGTH_SHORT).show()
-    }
-
     val onClickEvent : (String,String) -> Unit =  { url, title ->
         val intent = Intent(this, AgenWebActivity::class.java)
         intent.putExtra("url", url)
@@ -95,42 +83,40 @@ class ArtiListActivity : ComponentActivity() {
         }
     }
     @Composable
-    fun ArtiList(){
-            val artiState = artiModel.Arti
-            val listState = rememberLazyListState()
-            val refreshing by artiModel.isRefreshing
-            val refreshState = rememberSwipeRefreshState(refreshing)
-            SwipeRefresh(state = refreshState, onRefresh = { artiModel.fresh() })
-            {
-                LazyColumn(state = listState) {
-                    artiState.value.apply {
-                        itemsIndexed(this) { idx, article ->
-                            if (idx > 0) Divider(thickness = 1.dp)
-                            LazyListItem.ArticleItem(article,collectEvent,onClickEvent)
+    fun MyCollectList() {
+        val artiState = myColmodelc.Arti
+        val listState = rememberLazyListState()
+        val refreshing by myColmodelc.isRefreshing
+        val refreshState = rememberSwipeRefreshState(refreshing)
+        SwipeRefresh(state = refreshState, onRefresh = { myColmodelc.fresh() })
+        {
+            LazyColumn(state = listState) {
+                artiState.value.apply {
+                    itemsIndexed(this) { idx, article ->
+                        if (idx > 0) Divider(thickness = 1.dp)
+                        LazyListItem.CollectArtiItem(article,collectEvent,onClickEvent)
+                    }
+                }
+                item {
+//                Text("加载更多")
+                    val layoutInfo = listState.layoutInfo
+                    val shouldLoadMore = remember {
+                        derivedStateOf {
+                            val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+                                ?: return@derivedStateOf true
+                            lastVisibleItem.index == layoutInfo.totalItemsCount - 1
                         }
                     }
-                    item {
-//                Text("加载更多")
-                        val layoutInfo = listState.layoutInfo
-                        val shouldLoadMore = remember {
-                            derivedStateOf {
-                                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
-                                    ?: return@derivedStateOf true
-                                lastVisibleItem.index == layoutInfo.totalItemsCount - 1
+                    LaunchedEffect(shouldLoadMore) {
+                        snapshotFlow { shouldLoadMore.value }
+                            .collect {
+                                myColmodelc.getColArtiList(myColmodelc.pageCount)
                             }
-                        }
-                        LaunchedEffect(shouldLoadMore) {
-                            snapshotFlow { shouldLoadMore.value }
-                                .collect {
-                                    artiModel.queryKeyAtri(artiModel.pageCount)
-                                }
-                        }
                     }
                 }
             }
+        }
     }
 
 }
-
-
 
